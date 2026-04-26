@@ -7,14 +7,14 @@ export default function WhoWeAreSection() {
         <div className="flex flex-col space-y-8">
           <div>
             <span className="font-label-caps text-label-caps text-secondary uppercase tracking-[0.2em] mb-4 block">Quiénes Somos</span>
-            <h2 className="font-headline-md text-headline-md text-on-surface">El Tejido de la Hospitalidad Profesional</h2>
+            <h2 className="font-headline-md text-headline-md text-on-surface">Fabricantes y Expertos en Textiles</h2>
           </div>
           <div className="w-16 h-1 bg-primary-container"></div>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            Lavitex del Caribe cierra la brecha crítica entre la fabricación industrial a gran escala y el lujo táctil que exigen las marcas de hospitalidad premium. Nuestras instalaciones operan con precisión exigente, asegurando que cada hilo cumpla con los rigurosos estándares de durabilidad comercial sin comprometer la comodidad y transpirabilidad del algodón y el lino finos.
+            Lavitex Cancún es tu aliado estratégico en la industria hotelera y comercial. Nos especializamos en la fabricación a la medida y recuperación de blancos, garantizando siempre la máxima calidad y durabilidad en cada uno de nuestros productos.
           </p>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            Creemos en una estética de &quot;planchado y doblado&quot;, donde la organización, la limpieza y la calidad perdurable se entrelazan en cada producto. Desde ropa de cama de alto número de hilos diseñada para lavados repetidos hasta textiles resistentes para banquetes, nuestras soluciones están diseñadas para quienes no pueden permitirse comprometer la calidad.
+            Además de la lencería institucional, ofrecemos una amplia gama de artículos promocionales, servicios de serigrafía y soluciones de decoración textil. Todo orgullosamente hecho en Quintana Roo y hecho en México, manteniendo los estándares más exigentes del Caribe.
           </p>
           <div className="pt-4">
             <a className="font-headline-sm text-headline-sm text-primary flex items-center gap-2 hover:text-primary-container transition-colors" href="#">
