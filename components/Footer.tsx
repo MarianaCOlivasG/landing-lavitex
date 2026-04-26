@@ -19,10 +19,10 @@ export default function Footer() {
           <div className="flex flex-col space-y-6">
             <h4 className="font-headline-sm text-sm uppercase tracking-widest text-slate-900">Corporativo</h4>
             <nav className="flex flex-col space-y-4">
-              <a className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#">Sustentabilidad</a>
-              <a className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#">Aviso de Privacidad</a>
-              <a className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#">Términos de Servicio</a>
-              <a className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#">Políticas de Calidad</a>
+              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Sustentabilidad</a>
+              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Aviso de Privacidad</a>
+              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Términos de Servicio</a>
+              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Políticas de Calidad</a>
             </nav>
           </div>
 
@@ -30,10 +30,10 @@ export default function Footer() {
           <div className="flex flex-col space-y-6">
             <h4 className="font-headline-sm text-sm uppercase tracking-widest text-slate-900">Navegación</h4>
             <nav className="flex flex-col space-y-4">
-              <Link className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#home">Inicio</Link>
-              <Link className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#catalog">Catálogo de Productos</Link>
-              <Link className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#about">Nuestra Empresa</Link>
-              <Link className="text-slate-500 text-sm hover:text-cyan-600 transition-colors" href="#contact">Contacto</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/">Inicio</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/#catalog">Catálogo de Productos</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/#about">Nuestra Empresa</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/#contact">Contacto</Link>
             </nav>
           </div>
         </div>

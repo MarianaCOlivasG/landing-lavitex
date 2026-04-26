@@ -41,6 +41,7 @@ export interface Product {
   gallery: string[]
   category: string | null
   is_active: boolean
+  is_featured: boolean
   created_at: string
   product_variants?: ProductVariant[]
 }
@@ -70,6 +71,31 @@ export async function getProducts(search = ''): Promise<Product[]> {
 
   if (error) {
     console.error('[getProducts] Supabase error:', error.message)
+    return []
+  }
+
+  return (data as Product[]) ?? []
+}
+
+/** Fetch the 6 featured products for the home page. */
+export async function getFeaturedProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      product_variants (
+        *,
+        fabric_types ( id, name, description ),
+        measurements ( id, label, type )
+      )
+    `)
+    .eq('is_active', true)
+    .eq('is_featured', true)
+    .order('created_at', { ascending: true })
+    .limit(6)
+
+  if (error) {
+    console.error('[getFeaturedProducts] Supabase error:', error.message)
     return []
   }
 

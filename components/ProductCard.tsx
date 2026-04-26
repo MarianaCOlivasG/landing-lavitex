@@ -1,32 +1,62 @@
 import React from 'react';
-import { Product } from '../data/products';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Product } from '@/lib/supabase';
+import styles from '@/app/productos/productos.module.css';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Get unique fabric types and measurements from variants
+  const fabricTypes = Array.from(new Set(product.product_variants?.map(v => v.fabric_types?.name).filter(Boolean)));
+  const measurements = Array.from(new Set(product.product_variants?.map(v => v.measurements?.label).filter(Boolean)));
+
   return (
-    <div className="group bg-surface-container-lowest rounded-DEFAULT overflow-hidden shadow-md hover:shadow-lg transition-all duration-500 flex flex-col">
-      <div className="relative h-72 w-full bg-surface-container overflow-hidden border-b border-surface-container-highest">
-        <img 
-          alt={product.alt}
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
-          data-alt={product.alt}
-          src={product.image}
+    <div className={`${styles.card} premium-card`}>
+      <div className={styles.cardImageWrap}>
+        <Image 
+          src={product.main_image} 
+          alt={product.title} 
+          fill 
+          className={styles.cardImage}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
-        {product.badge && (
-          <div className="absolute top-4 left-4 bg-surface-container-low text-primary px-3 py-1 text-xs font-label-caps uppercase tracking-wider rounded-DEFAULT">
-            {product.badge}
-          </div>
+        {product.category && (
+          <span className={styles.categoryBadge}>{product.category}</span>
         )}
       </div>
-      <div className="p-8 flex-1 flex flex-col">
-        <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">{product.name}</h3>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">{product.description}</p>
-        <div className="mt-auto pt-4 border-t border-surface-container-highest flex justify-between items-center text-sm">
-          <span className="text-tertiary font-medium">{product.specs}</span>
-          <span className="material-symbols-outlined text-outline" data-icon={product.icon}>{product.icon}</span>
+
+      <div className={styles.cardBody}>
+        <h3 className={styles.cardTitle}>{product.title}</h3>
+        <p className={styles.cardDescription}>{product.description}</p>
+        
+        <div className="flex flex-col gap-3 mt-2">
+          {fabricTypes.length > 0 && (
+            <div className={styles.tagRow}>
+              <span className={styles.tagLabel}>Telas:</span>
+              {fabricTypes.map((type, idx) => (
+                <span key={idx} className={styles.tag}>{type}</span>
+              ))}
+            </div>
+          )}
+          
+          {measurements.length > 0 && (
+            <div className={styles.tagRow}>
+              <span className={styles.tagLabel}>Medidas:</span>
+              {measurements.map((size, idx) => (
+                <span key={idx} className={`${styles.tag} ${styles.tagSize}`}>{size}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.cardFooter}>
+          <Link href={`/productos/${product.slug}`} className={`${styles.ctaBtn} w-full justify-center`}>
+            Ver producto
+            <span className="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+          </Link>
         </div>
       </div>
     </div>

@@ -23,8 +23,7 @@ export default function WhoWeAreSection() {
             </a>
           </div>
         </div>
-        <div className="relative h-[600px] w-full rounded-DEFAULT overflow-hidden group shadow-md">
-          <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-700 z-10"></div>
+        <div className="relative h-[600px] w-full rounded-DEFAULT overflow-hidden group shadow-lg border border-white/20">
           <img 
             alt="Close-up of precise industrial textile weaving machinery working with pristine white cotton threads under bright, clean factory lighting" 
             className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 transform group-hover:scale-105" 
