@@ -7,7 +7,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   return (
-    <div className="group bg-surface-container-lowest rounded-DEFAULT overflow-hidden hover:shadow-[0_20px_40px_-10px_rgba(22,109,146,0.06)] transition-all duration-500 flex flex-col">
+    <div className="group bg-surface-container-lowest rounded-DEFAULT overflow-hidden shadow-md hover:shadow-lg transition-all duration-500 flex flex-col">
       <div className="relative h-72 w-full bg-surface-container overflow-hidden border-b border-surface-container-highest">
         <img 
           alt={product.alt}
@@ -16,7 +16,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           src={product.image}
         />
         {product.badge && (
-          <div className="absolute top-4 left-4 bg-surface-container-low text-primary px-3 py-1 text-xs font-label-caps uppercase tracking-wider rounded-sm">
+          <div className="absolute top-4 left-4 bg-surface-container-low text-primary px-3 py-1 text-xs font-label-caps uppercase tracking-wider rounded-DEFAULT">
             {product.badge}
           </div>
         )}

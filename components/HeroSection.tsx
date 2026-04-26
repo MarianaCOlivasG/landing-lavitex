@@ -9,7 +9,7 @@ export default function HeroSection() {
           className="w-full h-full object-cover"
           src="/images/hero-bg.png"
         />
-        <div className="absolute inset-0 bg-white/30"></div>
+        <div className="absolute inset-0 bg-white/40"></div>
       </div>
       <div className="relative z-10 max-w-container-max mx-auto px-gutter md:px-16 lg:px-24 text-center flex flex-col items-center">
         <h1 className="font-display-lg text-display-lg text-slate-900 mb-8 max-w-4xl text-balance font-black">
@@ -23,14 +23,11 @@ export default function HeroSection() {
             href="/docs/DOC-20260302-WA0009..pdf" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="bg-cyan-600 text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:bg-cyan-700 transition-colors duration-300 flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20"
+            className="bg-gradient-to-r from-cyan-600 to-cyan-500 text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:from-cyan-500 hover:to-cyan-400 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
           >
             Explorar Catálogo
             <span className="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
           </a>
-          <button className="bg-transparent border-2 border-cyan-600 text-cyan-600 px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:bg-white hover:text-cyan-700 transition-all duration-300">
-            Especificaciones Técnicas
-          </button>
         </div>
       </div>
     </header>

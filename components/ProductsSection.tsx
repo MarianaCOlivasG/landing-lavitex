@@ -4,7 +4,7 @@ import ProductCard from './ProductCard';
 
 export default function ProductsSection() {
   return (
-    <section id="catalog" className="w-full py-section-gap bg-surface">
+    <section id="catalog" className="w-full py-section-gap bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="max-w-container-max mx-auto px-gutter md:px-16 lg:px-24">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>

@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function WhoWeAreSection() {
   return (
-    <section id="about" className="w-full py-section-gap bg-surface-container-lowest">
+    <section id="about" className="w-full py-section-gap bg-gradient-to-b from-white to-slate-50">
       <div className="max-w-container-max mx-auto px-gutter md:px-16 lg:px-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="flex flex-col space-y-8">
           <div>
@@ -23,7 +23,7 @@ export default function WhoWeAreSection() {
             </a>
           </div>
         </div>
-        <div className="relative h-[600px] w-full rounded-DEFAULT overflow-hidden group">
+        <div className="relative h-[600px] w-full rounded-DEFAULT overflow-hidden group shadow-md">
           <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors duration-700 z-10"></div>
           <img 
             alt="Close-up of precise industrial textile weaving machinery working with pristine white cotton threads under bright, clean factory lighting" 

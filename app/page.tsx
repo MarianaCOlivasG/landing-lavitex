@@ -1,5 +1,6 @@
 import TopNavBar from '@/components/TopNavBar';
 import HeroSection from '@/components/HeroSection';
+import CertificationsSection from '@/components/CertificationsSection';
 import WhoWeAreSection from '@/components/WhoWeAreSection';
 import ProductsSection from '@/components/ProductsSection';
 import ContactSection from '@/components/ContactSection';
@@ -11,6 +12,7 @@ export default function Home() {
       <TopNavBar />
       <main className="flex-1 w-full">
         <HeroSection />
+        <CertificationsSection />
         <WhoWeAreSection />
         <ProductsSection />
         <ContactSection />
