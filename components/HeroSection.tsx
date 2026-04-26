@@ -19,10 +19,15 @@ export default function HeroSection() {
           Expertos en recuperación y fabricación de blancos institucionales, artículos promocionales, serigrafía y decoración para el sector hotelero.
         </p>
         <div className="flex flex-col sm:flex-row gap-6">
-          <button className="bg-cyan-600 text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:bg-cyan-700 transition-colors duration-300 flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20">
+          <a 
+            href="/docs/DOC-20260302-WA0009..pdf" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-cyan-600 text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:bg-cyan-700 transition-colors duration-300 flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20"
+          >
             Explorar Catálogo
             <span className="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
-          </button>
+          </a>
           <button className="bg-transparent border-2 border-cyan-600 text-cyan-600 px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:bg-white hover:text-cyan-700 transition-all duration-300">
             Especificaciones Técnicas
           </button>

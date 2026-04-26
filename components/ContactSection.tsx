@@ -14,16 +14,16 @@ export default function ContactSection() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase">Nombre Completo</label>
-                <input className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 text-on-surface font-body-md text-body-md transition-colors bg-transparent" placeholder="Juan Pérez" type="text"/>
+                <input className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 text-on-surface font-body-md text-body-md transition-colors bg-transparent" placeholder="Juan Pérez" type="text" />
               </div>
               <div>
                 <label className="block font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase">Número de Teléfono</label>
-                <input className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 text-on-surface font-body-md text-body-md transition-colors bg-transparent" placeholder="+52 (55) 1234-5678" type="tel"/>
+                <input className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 text-on-surface font-body-md text-body-md transition-colors bg-transparent" placeholder="+52 (55) 1234-5678" type="tel" />
               </div>
             </div>
             <div>
-              <label className="block font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase">Correo de Empresa</label>
-              <input className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 text-on-surface font-body-md text-body-md transition-colors bg-transparent" placeholder="compras@hotel.com" type="email"/>
+              <label className="block font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase">Correo</label>
+              <input className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 text-on-surface font-body-md text-body-md transition-colors bg-transparent" placeholder="ejemplo@correo.com" type="email" />
             </div>
             <div>
               <label className="block font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase">Mensaje</label>
@@ -38,15 +38,15 @@ export default function ContactSection() {
         {/* Map & Info */}
         <div className="flex flex-col h-full">
           <div className="mb-8">
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Sede Regional</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant">Estratégicamente ubicada para servir al corredor hotelero del Caribe.</p>
+            <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Nuestra Ubicación</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant">Encuéntranos en nuestras oficinas en Cancún, Quintana Roo.</p>
           </div>
           <div className="flex-1 min-h-[300px] w-full bg-surface-container rounded-DEFAULT overflow-hidden relative mb-8 border border-surface-container-highest">
-            <iframe 
-              src="https://maps.google.com/maps?q=21.1333632,-86.8269441&t=&z=15&ie=UTF8&iwloc=&output=embed" 
-              className="w-full h-full border-0 absolute inset-0" 
-              allowFullScreen 
-              loading="lazy" 
+            <iframe
+              src="https://maps.google.com/maps?q=21.17948980868,-86.837375164032&t=&z=15&ie=UTF8&iwloc=&output=embed"
+              className="w-full h-full border-0 absolute inset-0"
+              allowFullScreen
+              loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             ></iframe>
           </div>
@@ -54,15 +54,25 @@ export default function ContactSection() {
             <div className="flex items-start gap-4">
               <span className="material-symbols-outlined text-primary mt-1" data-icon="map">map</span>
               <div>
-                <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Ubicación de Instalaciones</h4>
-                <p className="font-body-md text-body-md text-on-surface-variant">Blvd. Luis Donaldo Colosio Km 12<br/>Cancún, Q.R. 77560<br/>México</p>
+                <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Dirección Física</h4>
+                <p className="font-body-md text-body-md text-on-surface-variant mb-4">Av. Talleres Reg 90 Mz 55 Lt15<br />Cancún, Q.R.</p>
+                <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1 mt-6">Horarios de Atención</h4>
+                <p className="font-body-md text-body-md text-on-surface-variant">Lunes a Viernes de 09 a 17 hrs<br />Sábado de 09 a 15 hrs</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="material-symbols-outlined text-primary mt-1" data-icon="support_agent">support_agent</span>
               <div>
                 <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Contacto Directo</h4>
-                <p className="font-body-md text-body-md text-on-surface-variant">Ventas: +52 998 123 4567<br/>Soporte: +52 998 765 4321<br/>info@lavitexcaribe.com</p>
+                <p className="font-body-md text-body-md text-on-surface-variant mb-4">
+                  <strong className="text-on-surface">Oficina:</strong> 998 884 0223<br />
+                  <strong className="text-on-surface">WhatsApp:</strong> 998 275 9638
+                </p>
+                <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1 mt-6">Correos Electrónicos</h4>
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  <a href="mailto:ventas@lavitexdelcaribe.com" className="text-cyan-600 hover:text-cyan-700 hover:underline transition-colors block">ventas@lavitexdelcaribe.com</a>
+                  <a href="mailto:susanamayen@lavitexdelcaribe.com" className="text-cyan-600 hover:text-cyan-700 hover:underline transition-colors block">susanamayen@lavitexdelcaribe.com</a>
+                </p>
               </div>
             </div>
           </div>
