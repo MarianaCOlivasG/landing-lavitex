@@ -12,9 +12,8 @@ export default function TopNavBar() {
         <div className="flex justify-between items-center w-full px-6 md:px-16 lg:px-24 py-4 max-w-7xl mx-auto">
           {/* Left: Logo */}
           <div className="flex items-center w-auto md:w-1/3">
-            <Link className="text-xl font-black tracking-tighter text-slate-900 flex items-center gap-2" href="#home">
-              <span className="material-symbols-outlined text-cyan-500" data-icon="waves">waves</span>
-              Lavitex del Caribe
+            <Link className="flex items-center" href="#home">
+              <img src="/images/logo.png" alt="Lavitex del Caribe Logo" className="h-12 w-auto object-contain" />
             </Link>
           </div>
 
