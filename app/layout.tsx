@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Lavitex del Caribe - Premium Industrial Textiles",
-  description: "High-performance, tactile luxury linens engineered specifically for the hospitality and commercial sectors across the Caribbean.",
+  title: "Lavitex del Caribe - Textiles Industriales Premium",
+  description: "Lencería de lujo táctil y de alto rendimiento diseñada específicamente para el sector hotelero y comercial en todo el Caribe.",
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} light`}
+      className={`${inter.variable} light scroll-smooth`}
     >
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
