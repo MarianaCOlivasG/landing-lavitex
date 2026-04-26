@@ -1,10 +1,46 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function TopNavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
+
+  useEffect(() => {
+    const sectionIds = ['home', 'catalog', 'about', 'contact'];
+    
+    const handleIntersect = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observerOptions = {
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0,
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, observerOptions);
+
+    sectionIds.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const navLinkClass = (sectionId: string) => {
+    const isActive = activeSection === sectionId;
+    return `font-sans tracking-tight text-sm font-medium uppercase transition-all duration-300 ${
+      isActive 
+        ? 'text-cyan-500 border-b-2 border-cyan-500 pb-1 opacity-100' 
+        : 'text-slate-500 hover:text-cyan-500 opacity-80'
+    }`;
+  };
 
   return (
     <>
@@ -19,16 +55,16 @@ export default function TopNavBar() {
 
           {/* Center: Links (Desktop) */}
           <div className="hidden md:flex items-center justify-center gap-8 w-1/3">
-            <Link className="font-sans tracking-tight text-sm font-medium uppercase text-cyan-500 border-b-2 border-cyan-500 pb-1 transition-all duration-300 opacity-80" href="#home">
+            <Link className={navLinkClass('home')} href="#home">
               Inicio
             </Link>
-            <Link className="font-sans tracking-tight text-sm font-medium uppercase text-slate-500 hover:text-cyan-500 transition-colors duration-300" href="#catalog">
-              Catálogo
-            </Link>
-            <Link className="font-sans tracking-tight text-sm font-medium uppercase text-slate-500 hover:text-cyan-500 transition-colors duration-300" href="#about">
+            <Link className={navLinkClass('about')} href="#about">
               Nosotros
             </Link>
-            <Link className="font-sans tracking-tight text-sm font-medium uppercase text-slate-500 hover:text-cyan-500 transition-colors duration-300" href="#contact">
+            <Link className={navLinkClass('catalog')} href="#catalog">
+              Catálogo
+            </Link>
+            <Link className={navLinkClass('contact')} href="#contact">
               Contacto
             </Link>
           </div>
@@ -85,16 +121,16 @@ export default function TopNavBar() {
             </button>
           </div>
           <div className="flex flex-col gap-6">
-            <Link onClick={() => setIsMobileMenuOpen(false)} className="font-sans tracking-tight text-lg font-medium uppercase text-slate-800 hover:text-cyan-500 transition-colors" href="#home">
+            <Link onClick={() => setIsMobileMenuOpen(false)} className={`font-sans tracking-tight text-lg font-medium uppercase transition-colors ${activeSection === 'home' ? 'text-cyan-600' : 'text-slate-800 hover:text-cyan-500'}`} href="#home">
               Inicio
             </Link>
-            <Link onClick={() => setIsMobileMenuOpen(false)} className="font-sans tracking-tight text-lg font-medium uppercase text-slate-800 hover:text-cyan-500 transition-colors" href="#catalog">
-              Catálogo
-            </Link>
-            <Link onClick={() => setIsMobileMenuOpen(false)} className="font-sans tracking-tight text-lg font-medium uppercase text-slate-800 hover:text-cyan-500 transition-colors" href="#about">
+            <Link onClick={() => setIsMobileMenuOpen(false)} className={`font-sans tracking-tight text-lg font-medium uppercase transition-colors ${activeSection === 'about' ? 'text-cyan-600' : 'text-slate-800 hover:text-cyan-500'}`} href="#about">
               Nosotros
             </Link>
-            <Link onClick={() => setIsMobileMenuOpen(false)} className="font-sans tracking-tight text-lg font-medium uppercase text-slate-800 hover:text-cyan-500 transition-colors" href="#contact">
+            <Link onClick={() => setIsMobileMenuOpen(false)} className={`font-sans tracking-tight text-lg font-medium uppercase transition-colors ${activeSection === 'catalog' ? 'text-cyan-600' : 'text-slate-800 hover:text-cyan-500'}`} href="#catalog">
+              Catálogo
+            </Link>
+            <Link onClick={() => setIsMobileMenuOpen(false)} className={`font-sans tracking-tight text-lg font-medium uppercase transition-colors ${activeSection === 'contact' ? 'text-cyan-600' : 'text-slate-800 hover:text-cyan-500'}`} href="#contact">
               Contacto
             </Link>
             
