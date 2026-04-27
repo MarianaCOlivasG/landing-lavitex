@@ -8,10 +8,15 @@ interface ProductInfoProps {
 }
 
 export default function ProductInfo({ product }: ProductInfoProps) {
+  const [shareUrl, setShareUrl] = React.useState('');
+
+  React.useEffect(() => {
+    setShareUrl(window.location.href);
+  }, []);
+
   const fabricTypes = Array.from(new Set(product.product_variants?.map(v => v.fabric_types?.name).filter(Boolean)));
   const measurements = Array.from(new Set(product.product_variants?.map(v => v.measurements?.label).filter(Boolean)));
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareTitle = `Mira este producto en Lavitex: ${product.title}`;
 
   const shareLinks = [
