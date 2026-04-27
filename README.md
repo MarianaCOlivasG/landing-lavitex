@@ -48,11 +48,14 @@ Open [http://localhost:3000](http://localhost:3000) to see the result.
 
 ## 🐳 Docker Deployment
 
-To build and run the application using Docker:
+Debido a que Next.js necesita las variables `NEXT_PUBLIC_` durante la compilación para incluirlas en el bundle del cliente, debes pasarlas como argumentos de construcción:
 
 1. **Build the image:**
    ```bash
-   docker build -t lavitex-app .
+   docker build \
+     --build-arg NEXT_PUBLIC_SUPABASE_URL="https://tu-proyecto.supabase.co" \
+     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="tu-anon-key-aqui" \
+     -t lavitex-app .
    ```
 
 2. **Run the container:**
@@ -62,18 +65,10 @@ To build and run the application using Docker:
 
 ## 🏗️ Project Structure
 
-- `/app`: Next.js App Router pages and layouts.
-- `/components`: Reusable UI components.
-- `/lib`: Utility functions and external service configurations (Supabase client).
-- `/public`: Static assets (images, icons).
-- `/data`: Static data or mockups.
-
-## 📝 Scripts
-
-- `npm run dev`: Starts the development server.
-- `npm run build`: Builds the application for production.
-- `npm run start`: Starts the production server.
-- `npm run lint`: Runs ESLint to check for code quality issues.
+- `/app`: Next.js App Router (Páginas y layouts).
+- `/components`: Componentes UI reutilizables.
+- `/lib`: Funciones de utilidad y cliente de Supabase.
+- `/public`: Assets estáticos.
 
 ---
 
