@@ -128,22 +128,24 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </div>
       </div>
 
-      {/* Social Sharing */}
-      <div className="pt-6 border-t border-slate-100">
-        <h3 className="text-sm font-medium text-on-surface-variant mb-4">Compartir producto:</h3>
-        <div className="flex gap-3">
-          {shareLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-transform hover:-translate-y-1 ${link.color}`}
-            >
-              <span className="material-symbols-outlined text-lg">{link.icon}</span>
-              {link.name}
-            </a>
-          ))}
+      {/* Social Sharing (Icon only) */}
+      <div className="pt-8 border-t border-slate-100">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-on-surface-variant">Compartir:</span>
+          <div className="flex gap-3">
+            {shareLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-10 h-10 flex items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md active:scale-90 ${link.color}`}
+                title={`Compartir en ${link.name}`}
+              >
+                <span className="material-symbols-outlined text-xl">{link.icon}</span>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </div>
