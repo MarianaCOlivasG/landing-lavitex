@@ -85,18 +85,24 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         )}
       </div>
 
-      {/* Purchase Links */}
-      <div className="flex flex-col gap-4 pt-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      {/* Purchase Links (Icon only) */}
+      <div className="flex items-center gap-3 pt-4">
+        <span className="text-sm font-medium text-on-surface-variant mr-2">Disponibilidad en:</span>
+        <div className="flex gap-4">
           {product.mercadolibre_url && (
             <a
               href={product.mercadolibre_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-[#FFE600] text-black px-8 py-4 rounded-xl font-bold hover:bg-[#F5DC00] transition-all shadow-md active:scale-95"
+              className="w-12 h-12 flex items-center justify-center bg-[#FFE600] rounded-full shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-90"
+              title="Ver en Mercado Libre"
             >
-              Ver en Mercado Libre
-              <span className="material-symbols-outlined">shopping_cart</span>
+              {/* Simple representation of ML logo (shaking hands / M) */}
+              <img 
+                src="https://http2.mlstatic.com/frontend-assets/ui-navigation/5.21.22/mercadolibre/logo__small.png" 
+                alt="Mercado Libre" 
+                className="w-8 h-auto object-contain"
+              />
             </a>
           )}
           {product.amazon_url && (
@@ -104,24 +110,17 @@ export default function ProductInfo({ product }: ProductInfoProps) {
               href={product.amazon_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-[#FF9900] text-white px-8 py-4 rounded-xl font-bold hover:bg-[#E68A00] transition-all shadow-md active:scale-95"
+              className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-full shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-90"
+              title="Ver en Amazon"
             >
-              Ver en Amazon
-              <span className="material-symbols-outlined">shopping_bag</span>
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Amazon_icon.svg" 
+                alt="Amazon" 
+                className="w-7 h-auto object-contain"
+              />
             </a>
           )}
         </div>
-
-        {/* WhatsApp remains as a persistent high-conversion channel */}
-        <a
-          href={`https://wa.me/5211234567890?text=${encodeURIComponent(`Hola, me interesa comprar el producto: ${product.title}`)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-3 bg-[#25D366] text-white px-8 py-4 rounded-xl font-bold hover:bg-[#20bd5a] transition-all shadow-md hover:shadow-lg active:scale-95 w-full"
-        >
-          <span className="material-symbols-outlined">chat</span>
-          Comprar por WhatsApp
-        </a>
       </div>
 
       {/* Social Sharing */}
