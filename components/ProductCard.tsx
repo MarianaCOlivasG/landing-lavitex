@@ -53,7 +53,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className={styles.cardFooter}>
-          <Link href={`/productos/${product.slug}`} className={`${styles.ctaBtn} w-full justify-center`}>
+          <Link href={`/producto/${product.slug}`} className={`${styles.ctaBtn} w-full justify-center`}>
             Ver producto
             <span className="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
           </Link>

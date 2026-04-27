@@ -42,6 +42,8 @@ export interface Product {
   category: string | null
   is_active: boolean
   is_featured: boolean
+  mercadolibre_url: string | null
+  amazon_url: string | null
   created_at: string
   product_variants?: ProductVariant[]
 }
