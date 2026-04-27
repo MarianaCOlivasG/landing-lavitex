@@ -23,7 +23,7 @@ export default function HeroSection() {
             href="/docs/DOC-20260302-WA0009..pdf" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="bg-gradient-to-r from-cyan-600 to-cyan-500 text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:from-cyan-500 hover:to-cyan-400 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
+            className="btn-primary text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
           >
             Explorar Catálogo
             <span className="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
