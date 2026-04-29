@@ -7,7 +7,7 @@ import styles from './productos.module.css';
 
 export default function ProductGrid() {
   const searchParams = useSearchParams();
-  const search = searchParams.get('q') ?? '';
+  const search = searchParams.get('query') ?? '';
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

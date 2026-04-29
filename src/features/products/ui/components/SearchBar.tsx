@@ -5,7 +5,7 @@ import styles from './productos.module.css';
 
 export default function SearchBar() {
   const searchParams = useSearchParams();
-  const defaultValue = searchParams.get('q') ?? '';
+  const defaultValue = searchParams.get('query') ?? '';
 
   return (
     <form action="/productos" method="GET" className={styles.searchForm}>
@@ -13,7 +13,7 @@ export default function SearchBar() {
         <span className={`material-symbols-outlined ${styles.searchIcon}`}>search</span>
         <input
           type="text"
-          name="q"
+          name="query"
           defaultValue={defaultValue}
           placeholder="Buscar productos…"
           className={styles.searchInput}
