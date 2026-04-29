@@ -1,11 +1,19 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { getProductBySlug } from '@/lib/supabase';
-import TopNavBar from '@/components/TopNavBar';
-import Footer from '@/components/Footer';
-import ProductGallery from '@/components/ProductGallery';
-import ProductInfo from '@/components/ProductInfo';
+import { getProductBySlugUseCase, listProductSlugsUseCase } from '@/features/products/usecases/productUseCases';
+import TopNavBar from '@/shared/ui/TopNavBar';
+import Footer from '@/shared/ui/Footer';
+import ProductGallery from '@/features/products/ui/components/ProductGallery';
+import ProductInfo from '@/features/products/ui/components/ProductInfo';
 import Link from 'next/link';
+
+// Generate static params for all product slugs during export
+export async function generateStaticParams() {
+  const slugs = await listProductSlugsUseCase();
+  return slugs.map((slug) => ({ slug }));
+}
+
+
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -13,10 +21,11 @@ interface PageProps {
 
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getProductBySlugUseCase(slug);
 
   if (!product) {
     notFound();
+    return null;
   }
 
   return (

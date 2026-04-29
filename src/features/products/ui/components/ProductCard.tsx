@@ -1,17 +1,17 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Product } from '@/lib/supabase';
-import styles from '@/app/productos/productos.module.css';
+import { Product } from '@/features/products/domain/product';
+import styles from './productos.module.css';
 
 interface ProductCardProps {
-  product: Product;
+  product: any; // Using any for now to avoid complex mapping logic, but typed to Product in intent
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product }: { product: any }) {
   // Get unique fabric types and measurements from variants
-  const fabricTypes = Array.from(new Set(product.product_variants?.map(v => v.fabric_types?.name).filter(Boolean)));
-  const measurements = Array.from(new Set(product.product_variants?.map(v => v.measurements?.label).filter(Boolean)));
+  const fabricTypes = Array.from(new Set(product.product_variants?.map((v: any) => v.fabric_types?.name).filter(Boolean)));
+  const measurements = Array.from(new Set(product.product_variants?.map((v: any) => v.measurements?.label).filter(Boolean)));
 
   return (
     <div className={`${styles.card} premium-card`}>
@@ -36,7 +36,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {fabricTypes.length > 0 && (
             <div className={styles.tagRow}>
               <span className={styles.tagLabel}>Telas:</span>
-              {fabricTypes.map((type, idx) => (
+              {fabricTypes.map((type: any, idx: number) => (
                 <span key={idx} className={styles.tag}>{type}</span>
               ))}
             </div>
@@ -45,7 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {measurements.length > 0 && (
             <div className={styles.tagRow}>
               <span className={styles.tagLabel}>Medidas:</span>
-              {measurements.map((size, idx) => (
+              {measurements.map((size: any, idx: number) => (
                 <span key={idx} className={`${styles.tag} ${styles.tagSize}`}>{size}</span>
               ))}
             </div>

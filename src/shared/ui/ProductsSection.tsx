@@ -1,10 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { getFeaturedProducts } from '@/lib/supabase';
-import ProductCard from './ProductCard';
+import { getFeaturedProductsUseCase } from '@/features/products/usecases/productUseCases';
+import ProductCard from '@/features/products/ui/components/ProductCard';
 
 export default async function ProductsSection() {
-  const products = await getFeaturedProducts()
+  const products = await getFeaturedProductsUseCase()
 
   return (
     <section id="catalog" className="w-full py-section-gap bg-gradient-to-b from-slate-50 to-slate-100">
