@@ -19,9 +19,9 @@ export default function HeroSection() {
           Expertos en recuperación y fabricación de blancos institucionales, artículos promocionales, serigrafía y decoración para el sector hotelero.
         </p>
         <div className="flex flex-col sm:flex-row gap-6">
-          <a 
-            href="/docs/DOC-20260302-WA0009..pdf" 
-            target="_blank" 
+          <a
+            href="/docs/Catalogo-2026.pdf"
+            target="_blank"
             rel="noopener noreferrer"
             className="btn-primary text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
           >

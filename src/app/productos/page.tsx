@@ -11,6 +11,8 @@ export const metadata = {
   description: 'Catálogo completo de lencería hotelera premium: sábanas, toallas, cobertores, manteles y más.',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function ProductosPage() {
   return (
     <>
