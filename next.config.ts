@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Only use 'export' for production builds
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  // Use 'standalone' for Docker/Node.js production builds
+  output: 'standalone',
   
   images: {
     unoptimized: true,
