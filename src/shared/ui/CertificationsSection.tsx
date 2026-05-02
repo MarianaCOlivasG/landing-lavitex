@@ -18,12 +18,12 @@ export default function CertificationsSection() {
           <img
             src="/images/hecho_quintanaroo.png"
             alt="Hecho en Quintana Roo"
-            className="h-16 md:h-20 w-auto object-contain transition-all duration-500 hover:opacity-100"
+            className="h-24 md:h-32 w-auto object-contain transition-all duration-500 hover:opacity-100"
           />
           <img
             src="/images/hecho_mexico.png"
             alt="Hecho en México"
-            className="h-16 md:h-20 w-auto object-contain transition-all duration-500 hover:opacity-100"
+            className="h-24 md:h-32 w-auto object-contain transition-all duration-500 hover:opacity-100"
           />
         </div>
       </div>
