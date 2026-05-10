@@ -1,6 +1,42 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 
 export default function ContactSection() {
+  const [submitted, setSubmitted] = useState(false);
+
+  const validationSchema = Yup.object({
+    nombreCompleto: Yup.string()
+      .required('El nombre completo es obligatorio'),
+    telefono: Yup.string()
+      .matches(/^[0-9]{10}$/, 'El teléfono debe tener exactamente 10 dígitos')
+      .required('El número de teléfono es obligatorio'),
+    email: Yup.string()
+      .email('Ingresa un correo electrónico válido')
+      .required('El correo electrónico es obligatorio'),
+    mensaje: Yup.string()
+      .required('El mensaje es obligatorio'),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      nombreCompleto: '',
+      telefono: '',
+      email: '',
+      mensaje: '',
+    },
+    validationSchema,
+    onSubmit: (values) => {
+      console.log('Formulario enviado:', values);
+      setSubmitted(true);
+      // Aquí se podría integrar el envío a un API o Supabase
+      setTimeout(() => setSubmitted(false), 5000);
+      formik.resetForm();
+    },
+  });
+
   return (
     <section id="contact" className="w-full py-section-gap bg-gradient-to-b from-slate-100 to-slate-200 border-t border-slate-200">
       <div className="max-w-container-max mx-auto px-gutter md:px-16 lg:px-24 grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -10,30 +46,81 @@ export default function ContactSection() {
             <h2 className="font-headline-md text-headline-md text-slate-900 mb-2">Solicita una Consulta</h2>
             <p className="font-body-md text-body-md text-slate-600">Conecta con nuestros gerentes de cuenta comerciales para precios al por mayor y especificaciones técnicas.</p>
           </div>
-          <form className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block font-label-caps text-label-caps text-slate-500 mb-2 uppercase">Nombre Completo</label>
-                <input className="w-full border-0 border-b-2 border-slate-200 focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent" placeholder="Juan Pérez" type="text" />
+
+          {submitted ? (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 text-center animate-in fade-in zoom-in duration-300">
+              <span className="material-symbols-outlined text-emerald-500 text-4xl mb-2" data-icon="check_circle">check_circle</span>
+              <h3 className="text-emerald-900 font-headline-sm mb-1">¡Consulta Enviada!</h3>
+              <p className="text-emerald-700 font-body-md">Gracias por contactarnos. Un ejecutivo se comunicará contigo pronto.</p>
+              <button 
+                onClick={() => setSubmitted(false)}
+                className="mt-4 text-emerald-600 hover:text-emerald-700 font-label-caps uppercase text-xs font-bold tracking-wider"
+              >
+                Enviar otro mensaje
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={formik.handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block font-label-caps text-label-caps text-slate-500 mb-1 uppercase">Nombre Completo</label>
+                  <input 
+                    {...formik.getFieldProps('nombreCompleto')}
+                    className={`w-full border-0 border-b-2 ${formik.touched.nombreCompleto && formik.errors.nombreCompleto ? 'border-red-400' : 'border-slate-200'} focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent`} 
+                    placeholder="Juan Pérez" 
+                    type="text" 
+                  />
+                  {formik.touched.nombreCompleto && formik.errors.nombreCompleto ? (
+                    <div className="text-red-500 text-[10px] font-medium mt-1 uppercase tracking-wider">{formik.errors.nombreCompleto}</div>
+                  ) : null}
+                </div>
+                <div>
+                  <label className="block font-label-caps text-label-caps text-slate-500 mb-1 uppercase">Número de Teléfono</label>
+                  <input 
+                    {...formik.getFieldProps('telefono')}
+                    className={`w-full border-0 border-b-2 ${formik.touched.telefono && formik.errors.telefono ? 'border-red-400' : 'border-slate-200'} focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent`} 
+                    placeholder="10 dígitos (ej. 9981234567)" 
+                    type="tel" 
+                  />
+                  {formik.touched.telefono && formik.errors.telefono ? (
+                    <div className="text-red-500 text-[10px] font-medium mt-1 uppercase tracking-wider">{formik.errors.telefono}</div>
+                  ) : null}
+                </div>
               </div>
               <div>
-                <label className="block font-label-caps text-label-caps text-slate-500 mb-2 uppercase">Número de Teléfono</label>
-                <input className="w-full border-0 border-b-2 border-slate-200 focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent" placeholder="+52 (55) 1234-5678" type="tel" />
+                <label className="block font-label-caps text-label-caps text-slate-500 mb-1 uppercase">Correo</label>
+                <input 
+                  {...formik.getFieldProps('email')}
+                  className={`w-full border-0 border-b-2 ${formik.touched.email && formik.errors.email ? 'border-red-400' : 'border-slate-200'} focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent`} 
+                  placeholder="ejemplo@correo.com" 
+                  type="email" 
+                />
+                {formik.touched.email && formik.errors.email ? (
+                  <div className="text-red-500 text-[10px] font-medium mt-1 uppercase tracking-wider">{formik.errors.email}</div>
+                ) : null}
               </div>
-            </div>
-            <div>
-              <label className="block font-label-caps text-label-caps text-slate-500 mb-2 uppercase">Correo</label>
-              <input className="w-full border-0 border-b-2 border-slate-200 focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent" placeholder="ejemplo@correo.com" type="email" />
-            </div>
-            <div>
-              <label className="block font-label-caps text-label-caps text-slate-500 mb-2 uppercase">Mensaje</label>
-              <textarea className="w-full border-0 border-b-2 border-slate-200 focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent resize-none" placeholder="Describe tus necesidades de textiles comerciales..." rows={4}></textarea>
-            </div>
-            <button className="btn-primary text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:-translate-y-0.5 transition-all duration-300 w-full md:w-auto flex items-center justify-center gap-2 shadow-md" type="submit">
-              Enviar Consulta
-              <span className="material-symbols-outlined" data-icon="send">send</span>
-            </button>
-          </form>
+              <div>
+                <label className="block font-label-caps text-label-caps text-slate-500 mb-1 uppercase">Mensaje</label>
+                <textarea 
+                  {...formik.getFieldProps('mensaje')}
+                  className={`w-full border-0 border-b-2 ${formik.touched.mensaje && formik.errors.mensaje ? 'border-red-400' : 'border-slate-200'} focus:border-[#10B2CC] focus:ring-0 px-0 py-3 text-slate-900 font-body-md text-body-md transition-colors bg-transparent resize-none`} 
+                  placeholder="Describe tus necesidades de textiles comerciales..." 
+                  rows={4}
+                />
+                {formik.touched.mensaje && formik.errors.mensaje ? (
+                  <div className="text-red-500 text-[10px] font-medium mt-1 uppercase tracking-wider">{formik.errors.mensaje}</div>
+                ) : null}
+              </div>
+              <button 
+                className="btn-primary text-white px-8 py-4 rounded-DEFAULT font-headline-sm text-headline-sm hover:-translate-y-0.5 transition-all duration-300 w-full md:w-auto flex items-center justify-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed" 
+                type="submit"
+                disabled={formik.isSubmitting}
+              >
+                {formik.isSubmitting ? 'Enviando...' : 'Enviar Consulta'}
+                <span className="material-symbols-outlined" data-icon="send">send</span>
+              </button>
+            </form>
+          )}
         </div>
         {/* Map & Info */}
         <div className="flex flex-col h-full">
@@ -81,3 +168,4 @@ export default function ContactSection() {
     </section>
   );
 }
+
