@@ -28,13 +28,32 @@ export default function ContactSection() {
       mensaje: '',
     },
     validationSchema,
-    onSubmit: (values) => {
-      console.log('Formulario enviado:', values);
-      setSubmitted(true);
-      // Aquí se podría integrar el envío a un API o Supabase
-      setTimeout(() => setSubmitted(false), 5000);
-      formik.resetForm();
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      try {
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values),
+        });
+
+        if (response.ok) {
+          setSubmitted(true);
+          resetForm();
+          setTimeout(() => setSubmitted(false), 5000);
+        } else {
+          const errorData = await response.json();
+          alert(`Error al enviar el mensaje: ${errorData.error || 'Inténtalo de nuevo más tarde.'}`);
+        }
+      } catch (error) {
+        console.error('Error de red:', error);
+        alert('Error de red. Por favor verifica tu conexión.');
+      } finally {
+        setSubmitting(false);
+      }
     },
+
   });
 
   return (
