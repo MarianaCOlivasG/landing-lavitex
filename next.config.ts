@@ -2,7 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Use 'standalone' for Docker/Node.js production builds
-  output: 'export',
+  output: 'standalone',
+
 
   images: {
     unoptimized: true,
