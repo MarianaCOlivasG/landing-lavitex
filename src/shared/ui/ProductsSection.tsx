@@ -13,11 +13,22 @@ export default async function ProductsSection() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
-            <span className="font-label-caps text-label-caps text-secondary uppercase tracking-[0.2em] mb-4 block">
-              Líneas de Producto
-            </span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
+              <span className="font-label-caps text-label-caps text-secondary uppercase tracking-[0.2em]">
+                Líneas de Producto
+              </span>
+              <span className="text-slate-300 text-xs mx-1">|</span>
+              {['Hogar', 'Hotelera', 'Spa', 'Hospital', 'Eventos'].map((line, index) => (
+                <React.Fragment key={line}>
+                  <span className="text-xs font-medium tracking-widest uppercase text-slate-500">
+                    {line}
+                  </span>
+                  {index < 4 && <span className="text-slate-300 text-xs">•</span>}
+                </React.Fragment>
+              ))}
+            </div>
             <h2 className="font-headline-md text-headline-md text-on-surface">
-              Diseñado para la Excelencia
+              Productos Destacados
             </h2>
           </div>
           <Link

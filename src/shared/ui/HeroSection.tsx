@@ -16,7 +16,7 @@ export default function HeroSection() {
           Fabricante de Blancos y Edredones a la Medida
         </h1>
         <p className="font-body-lg text-body-lg text-slate-700 max-w-2xl mb-12 text-lg">
-          Expertos en recuperación y fabricación de blancos institucionales, artículos promocionales, serigrafía y decoración para el sector hotelero.
+          Expertos en recuperación y fabricación de blancos institucionales, artículos promocionales, serigrafía y decoración para tu hogar y el sector de la hospitalidad.
         </p>
         <div className="flex flex-col sm:flex-row gap-6">
           <a

@@ -11,10 +11,10 @@ export default function WhoWeAreSection() {
           </div>
           <div className="w-16 h-1 bg-primary-container"></div>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            Lavitex Cancún es tu aliado estratégico en la industria hotelera y comercial. Nos especializamos en la fabricación a la medida y recuperación de blancos, garantizando siempre la máxima calidad y durabilidad en cada uno de nuestros productos.
+            Lavitex del Caribe es tu aliado estratégico en la industria hotelera y comercial. Nos especializamos en la fabricación a la medida y recuperación de blancos, garantizando siempre la máxima calidad y durabilidad en cada uno de nuestros productos reduciendo tiempos y costos de entrega.
           </p>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            Además de la lencería institucional, ofrecemos una amplia gama de artículos promocionales, servicios de serigrafía y soluciones de decoración textil. Todo orgullosamente hecho en Quintana Roo y hecho en México, manteniendo los estándares más exigentes del Caribe.
+            Además de la lencería institucional, ofrecemos una amplia gama de artículos promocionales, servicios de serigrafía y soluciones de decoración textil. Todo orgullosamente hecho en Quintana Roo y hecho en México, manteniendo los estándares más exigentes del mercado.
           </p>
           <div className="pt-4">
             <a className="font-headline-sm text-headline-sm text-primary flex items-center gap-2 hover:text-primary-container transition-colors" href="#">
@@ -24,11 +24,11 @@ export default function WhoWeAreSection() {
           </div>
         </div>
         <div className="relative h-[600px] w-full rounded-DEFAULT overflow-hidden group shadow-lg border border-white/20">
-          <img 
-            alt="Close-up of precise industrial textile weaving machinery working with pristine white cotton threads under bright, clean factory lighting" 
-            className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 transform group-hover:scale-105" 
-            data-alt="Close-up of precise industrial textile weaving machinery working with pristine white cotton threads under bright, clean factory lighting" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGQDo7mAJ-K5EBUcTuY3BocFNhwMMha76qBH0lg56nNQ9Mv84GSn94l8FKFQQTfdhY1xjC4UVmVHHKqShh-Tf_zM6gjrEc4br04SsszM1FYk4RTOSHqsqZk_SqFpFiVtzCrVr3UILEFsnymIUhavFlRMVME4OtdRQYyq-no1GR4E_zcJn7yZTSg3rTdUcHGE7vV493zeXa9JiHcG5M0-1JEMOLLn0fCvikybdQGycaDW5i0_V2iXlOgIb94gjY8SqQEEZSjLrZRWae"
+          <img
+            alt="Quiénes Somos - Lavitex del Caribe"
+            className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 transform group-hover:scale-105"
+            data-alt="Quiénes Somos - Lavitex del Caribe"
+            src="/images/quienes_somos.png"
           />
         </div>
       </div>
