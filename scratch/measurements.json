@@ -1,0 +1,13 @@
+[{"id":"bbbbbbbb-0001-0001-0001-000000000001","label":"Individual (Twin)","type":"size"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000002","label":"Matrimonial (Full)","type":"size"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000003","label":"Queen","type":"size"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000004","label":"King","type":"size"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000005","label":"50x70 cm","type":"dimension"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000006","label":"70x140 cm","type":"dimension"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000007","label":"100x150 cm","type":"dimension"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000008","label":"45x45 cm","type":"dimension"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000009","label":"Estándar","type":"size"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000010","label":"Unitalla","type":"size"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000011","label":"90x150 cm","type":"dimension"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000012","label":"30x30 cm","type":"dimension"}, 
+ {"id":"bbbbbbbb-0001-0001-0001-000000000013","label":"40x60 cm","type":"dimension"}]

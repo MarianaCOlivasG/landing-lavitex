@@ -7,6 +7,8 @@ import ContactSection from '@/shared/ui/ContactSection';
 import Footer from '@/shared/ui/Footer';
 
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   return (
     <>

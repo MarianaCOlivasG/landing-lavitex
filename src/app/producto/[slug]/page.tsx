@@ -7,6 +7,8 @@ import ProductGallery from '@/features/products/ui/components/ProductGallery';
 import ProductInfo from '@/features/products/ui/components/ProductInfo';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 // Generate static params for all product slugs during export
 export async function generateStaticParams() {
   const slugs = await listProductSlugsUseCase();

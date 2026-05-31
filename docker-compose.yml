@@ -1,18 +1,42 @@
 services:
   lavitex:
-    image: mariana/lavitex:latest # Cambia esto por tu imagen en Docker Hub
-    container_name: lavitex-app
+    build: .
+    # image: marianaolivas/lavitex-web:latest
+    container_name: lavitex-we
     restart: always
     ports:
-      - "3000:3000"
-    env_file:
-      - .env.local
+      - "5005:3000"
+    cpus: 0.5
+    mem_limit: 512m
+    depends_on:
+      - mysql
     environment:
-      - NODE_ENV=production
-    # Si prefieres pasar variables directamente:
-    # environment:
-    #   - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-    #   - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      DB_TYPE: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: lavitex_user
+      DB_PASSWORD: lavitex_password
+      DB_NAME: lavitex_db
+
+  mysql:
+    image: mysql:8.0
+    container_name: lavitex-mysql
+    restart: always
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_123
+      MYSQL_DATABASE: lavitex_db
+      MYSQL_USER: lavitex_user
+      MYSQL_PASSWORD: lavitex_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql_db.sql:/docker-entrypoint-initdb.d/init.sql
+    cpus: 0.5
+    mem_limit: 512m
+
+volumes:
+  mysql_data:
 
 networks:
   default:
