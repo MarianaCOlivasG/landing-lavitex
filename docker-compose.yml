@@ -8,35 +8,35 @@ services:
       - "5005:3000"
     cpus: 0.5
     mem_limit: 512m
-    depends_on:
-      - mysql
+    # depends_on:
+    #   - mysql
     environment:
       DB_TYPE: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
+      DB_HOST: 82.180.131.127
+      DB_PORT: 3308
       DB_USER: lavitex_user
       DB_PASSWORD: lavitex_password
       DB_NAME: lavitex_db
 
-  mysql:
-    image: mysql:8.0
-    container_name: lavitex-mysql
-    restart: always
-    ports:
-      - "3308:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password_123
-      MYSQL_DATABASE: lavitex_db
-      MYSQL_USER: lavitex_user
-      MYSQL_PASSWORD: lavitex_password
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql_db.sql:/docker-entrypoint-initdb.d/init.sql
-    cpus: 0.5
-    mem_limit: 512m
+#   mysql:
+#     image: mysql:8.0
+#     container_name: lavitex-mysql
+#     restart: always
+#     ports:
+#       - "3308:3306"
+#     environment:
+#       MYSQL_ROOT_PASSWORD: root_password_123
+#       MYSQL_DATABASE: lavitex_db
+#       MYSQL_USER: lavitex_user
+#       MYSQL_PASSWORD: lavitex_password
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#       - ./mysql_db.sql:/docker-entrypoint-initdb.d/init.sql
+#     cpus: 0.5
+#     mem_limit: 512m
 
-volumes:
-  mysql_data:
+# volumes:
+#   mysql_data:
 
 networks:
   default:
