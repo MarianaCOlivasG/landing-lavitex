@@ -1,314 +1,1485 @@
--- MySQL Database Schema and Seed Data for Lavitex
--- Generated on: 2026-05-31T19:47:17.101Z
+-- Instalación completa de MySQL para Lavitex del Caribe 2026
+-- Fuente: public/docs/Catalogo-2026.pdf, productos de páginas 4 a 40.
+-- El programa de recuperación y reparación de blancos (página 41) es un servicio y no se inserta como producto.
+-- Precio queda NULL y stock queda en 0 porque el catálogo no publica precios ni inventario.
+-- SKU queda NULL porque el catálogo no proporciona códigos SKU.
+-- Enlaces temporales: índices de Mercado Libre México y Amazon México.
+-- main_image usa recursos existentes en public/images; logo.png funciona como imagen temporal donde no hay foto propia.
+-- Las variantes base con measurement_id/fabric_type_id NULL representan productos para los que el PDF no especifica opciones.
 
 /*!40101 SET NAMES utf8mb4 */;
+SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE DATABASE IF NOT EXISTS lavitex_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS lavitex_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
 USE lavitex_db;
 
--- --------------------------------------------------------
--- Table structure for table fabric_types
--- --------------------------------------------------------
+DROP PROCEDURE IF EXISTS sp_search_products;
 DROP TABLE IF EXISTS product_variants;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS measurements;
 DROP TABLE IF EXISTS fabric_types;
+
 CREATE TABLE fabric_types (
   id VARCHAR(36) NOT NULL,
-  name VARCHAR(255) NOT NULL UNIQUE,
-  description TEXT,
-  PRIMARY KEY (id)
+  name VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_fabric_types_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
--- Table structure for table measurements
--- --------------------------------------------------------
-DROP TABLE IF EXISTS measurements;
 CREATE TABLE measurements (
   id VARCHAR(36) NOT NULL,
-  label VARCHAR(255) NOT NULL UNIQUE,
+  label VARCHAR(255) NOT NULL,
   type VARCHAR(50) NOT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_measurements_label (label)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
--- Table structure for table products
--- --------------------------------------------------------
-DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id VARCHAR(36) NOT NULL,
-  slug VARCHAR(255) NOT NULL UNIQUE,
+  slug VARCHAR(255) NOT NULL,
   title VARCHAR(255) NOT NULL,
-  description TEXT,
+  description TEXT NULL,
   main_image VARCHAR(1024) NOT NULL,
-  gallery JSON,
-  category VARCHAR(100),
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  gallery JSON NULL,
+  category VARCHAR(100) NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_featured BOOLEAN NOT NULL DEFAULT FALSE,
-  mercadolibre_url VARCHAR(1024),
-  amazon_url VARCHAR(1024),
-  PRIMARY KEY (id)
+  mercadolibre_url VARCHAR(1024) NULL,
+  amazon_url VARCHAR(1024) NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_products_slug (slug),
+  KEY idx_products_active_featured (is_active, is_featured),
+  KEY idx_products_category (category),
+  FULLTEXT KEY idx_products_search (title, description)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add Full-Text index on title and description for search optimization
-ALTER TABLE products ADD FULLTEXT INDEX idx_products_search (title, description);
-
--- --------------------------------------------------------
--- Table structure for table product_variants
--- --------------------------------------------------------
 CREATE TABLE product_variants (
   id VARCHAR(36) NOT NULL,
   product_id VARCHAR(36) NOT NULL,
-  fabric_type_id VARCHAR(36),
-  measurement_id VARCHAR(36),
-  sku VARCHAR(100),
-  price DECIMAL(10, 2),
-  stock INT DEFAULT 0,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  fabric_type_id VARCHAR(36) NULL,
+  measurement_id VARCHAR(36) NULL,
+  sku VARCHAR(100) NULL,
+  price DECIMAL(10, 2) NULL,
+  stock INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-  FOREIGN KEY (fabric_type_id) REFERENCES fabric_types(id) ON DELETE SET NULL,
-  FOREIGN KEY (measurement_id) REFERENCES measurements(id) ON DELETE SET NULL
+  KEY idx_product_variants_product_active (product_id, is_active),
+  KEY idx_product_variants_fabric (fabric_type_id),
+  KEY idx_product_variants_measurement (measurement_id),
+  CONSTRAINT fk_product_variants_product
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  CONSTRAINT fk_product_variants_fabric
+    FOREIGN KEY (fabric_type_id) REFERENCES fabric_types(id) ON DELETE SET NULL,
+  CONSTRAINT fk_product_variants_measurement
+    FOREIGN KEY (measurement_id) REFERENCES measurements(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+SET FOREIGN_KEY_CHECKS = 1;
 
--- --------------------------------------------------------
--- Dumping data for table fabric_types
--- --------------------------------------------------------
+START TRANSACTION;
+
+-- 1) Tipos de tela y composiciones especificadas en el catálogo
 INSERT INTO fabric_types (id, name, description) VALUES
-('aaaaaaaa-0001-0001-0001-000000000001', 'Algodón 100%', 'Fibra natural suave y transpirable, ideal para hotelería de lujo'),
-('aaaaaaaa-0001-0001-0001-000000000002', 'Percal 200 hilos', 'Tejido de algodón fino con acabado sedoso y durabilidad superior'),
-('aaaaaaaa-0001-0001-0001-000000000003', 'Satén', 'Superficie brillante y suave, aspecto lujoso y elegante'),
-('aaaaaaaa-0001-0001-0001-000000000004', 'Microfibra', 'Tejido sintético ultrasuave, resistente y de secado rápido'),
-('aaaaaaaa-0001-0001-0001-000000000005', 'Bambú', 'Fibra ecológica, antibacterial y termorreguladora'),
-('aaaaaaaa-0001-0001-0001-000000000006', 'Lino', 'Tejido natural premium con textura característica y alta resistencia'),
-('aaaaaaaa-0001-0001-0001-000000000007', 'Jacquard', 'Tejido con patrones bordados en relieve, alta elegancia'),
-('aaaaaaaa-0001-0001-0001-000000000008', 'Poliéster satinado a rayas', 'Tela fresca y resistente con acabado satinado elegante'),
-('aaaaaaaa-0001-0001-0001-000000000009', '50% Algodón / 50% Poliéster', 'Mezcla equilibrada para mayor durabilidad y confort'),
-('aaaaaaaa-0001-0001-0001-000000000010', 'Felpa Premium', 'Tejido absorbente y suave de alta calidad'),
-('aaaaaaaa-0001-0001-0001-000000000011', 'Tergal', 'Tela resistente ideal para mantelería y cortinas'),
-('aaaaaaaa-0001-0001-0001-000000000012', 'Gabardina', 'Tejido de algodón resistente para uniformes y mandiles');
+  ('015e5704-5a12-4815-b16c-0ac538170aa8', 'Poliéster satinado a rayas con relleno Delcron', 'Tela 100% poliéster satinado a rayas y relleno Delcron.'),
+  ('763f6c23-fae6-49e6-aacf-70acfdfa18b4', '50% algodón / 50% poliéster con poliuretano 100%', 'Tela transpirable 50% algodón y 50% poliéster, con relleno de poliuretano 100%.'),
+  ('38b11e94-9a74-4d87-81f8-7d1e9a9f0fa3', 'Percal 180 hilos 50% poliéster / 50% algodón', 'Tela percal de 180 hilos con composición 50% poliéster y 50% algodón.'),
+  ('8a5144f7-0c20-4903-9bd5-b3955ba81da8', 'Percal 200 hilos 50% poliéster / 50% algodón', 'Tela percal de 200 hilos con composición 50% poliéster y 50% algodón.'),
+  ('72e23f35-af89-490e-9dea-097b28eba10e', 'Percal 300 hilos 100% algodón', 'Tela percal de 300 hilos elaborada en 100% algodón.'),
+  ('5a420232-7caf-414d-9b59-2ef4915a0a24', 'Percal 180 hilos con relleno fibra 100% poliéster', 'Forro de percal 180 hilos, 50% poliéster y 50% algodón, con relleno de fibra 100% poliéster.'),
+  ('33c9132e-37bd-4c60-a420-170119ae1028', 'Percal 180 hilos con relleno microgel', 'Forro de percal 180 hilos, 50% poliéster y 50% algodón, con relleno microgel.'),
+  ('afc26652-faac-4098-8d6d-e241583917c1', 'Satin líneas 250 hilos 50% poliéster / 50% algodón', 'Tela satin de líneas, 250 hilos, con composición 50% poliéster y 50% algodón.'),
+  ('fbb731c4-155d-4273-8b57-b480956b2a1e', 'Tela waffle', 'Tela waffle con textura; composición no especificada para este producto en el catálogo.'),
+  ('13b311dc-e5ee-4db7-b6d9-6a9f1a4b8833', 'Polar Flanel 100% poliéster', 'Tela Polar Flanel elaborada en 100% poliéster.'),
+  ('b7ce8ea9-80ce-4114-b3eb-abad574ece8d', 'Waffle 50% algodón / 50% poliéster', 'Tela waffle con composición 50% algodón y 50% poliéster.'),
+  ('0c71f882-2fda-4bcc-b37f-b1816864afab', 'Bramante 50% algodón / 50% poliéster', 'Tela Bramante con composición 50% algodón y 50% poliéster.'),
+  ('740c7b03-1da6-4e2d-9b91-8c8e1613488a', 'Hilo Torzal 100% algodón', 'Felpa elaborada con hilo torzal 100% algodón.'),
+  ('4a540f49-7c1e-4a01-9957-0d1f637811be', 'Manta', 'Tela de manta; composición no especificada en el catálogo.')
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  description = VALUES(description);
 
--- --------------------------------------------------------
--- Dumping data for table measurements
--- --------------------------------------------------------
+-- 2) Medidas, tamaños o formatos expresamente publicados
 INSERT INTO measurements (id, label, type) VALUES
-('bbbbbbbb-0001-0001-0001-000000000001', 'Individual (Twin)', 'size'),
-('bbbbbbbb-0001-0001-0001-000000000002', 'Matrimonial (Full)', 'size'),
-('bbbbbbbb-0001-0001-0001-000000000003', 'Queen', 'size'),
-('bbbbbbbb-0001-0001-0001-000000000004', 'King', 'size'),
-('bbbbbbbb-0001-0001-0001-000000000005', '50x70 cm', 'dimension'),
-('bbbbbbbb-0001-0001-0001-000000000006', '70x140 cm', 'dimension'),
-('bbbbbbbb-0001-0001-0001-000000000007', '100x150 cm', 'dimension'),
-('bbbbbbbb-0001-0001-0001-000000000008', '45x45 cm', 'dimension'),
-('bbbbbbbb-0001-0001-0001-000000000009', 'Estándar', 'size'),
-('bbbbbbbb-0001-0001-0001-000000000010', 'Unitalla', 'size'),
-('bbbbbbbb-0001-0001-0001-000000000011', '90x150 cm', 'dimension'),
-('bbbbbbbb-0001-0001-0001-000000000012', '30x30 cm', 'dimension'),
-('bbbbbbbb-0001-0001-0001-000000000013', '40x60 cm', 'dimension');
+  ('5191a1c9-bcf9-4a19-a293-9c11e2647101', 'Individual', 'size'),
+  ('d683f87d-3bfa-4539-9c61-c548b7f90dc1', 'Matrimonial', 'size'),
+  ('0a8e3016-cf46-4293-9e9b-d8efd06b4863', 'Queen Size', 'size'),
+  ('4d3af9c1-2e6f-4413-a163-0bca78420251', 'King Size', 'size'),
+  ('2dcf03a5-49cd-41db-90e3-cee33e0ad20d', '160 x 270 cm', 'dimension'),
+  ('3f932f0c-9baf-4e97-986f-515bb8dd7f89', '180 x 280 cm', 'dimension'),
+  ('85267c68-c679-4e9d-9044-8f9a7365c7b1', '220 x 280 cm', 'dimension'),
+  ('e53004b2-79f6-44bf-af4e-61c785993bf1', '240 x 280 cm', 'dimension'),
+  ('ab7fe257-62ca-458f-8346-d5e2a5a65e31', '280 x 280 cm', 'dimension'),
+  ('6f79f64a-d6cd-4f8e-bb5c-6a7dd9e44682', '50 x 80 cm', 'dimension'),
+  ('5e9f9fb9-3a13-492d-949e-fda392bbf8f7', '50 x 100 cm', 'dimension'),
+  ('3d812e60-e8a0-4b61-aab8-3267593812d2', '50 x 70 cm', 'dimension'),
+  ('6ff207e0-3f9c-42e3-be76-83919def0b12', '50 x 90 cm', 'dimension'),
+  ('1156f30c-5794-4fdf-9187-ee1a931461e6', '140 x 210 cm', 'dimension'),
+  ('d46da32e-4e3f-41cf-a9b3-231e1c9a66f6', '300 x 210 cm', 'dimension'),
+  ('d2800bdc-85e9-40f9-b3f3-fdadbab389c0', '180 x 180 cm', 'dimension'),
+  ('34b74758-8998-42e5-a2ad-4d7c03d0604f', '40 x 40 cm', 'dimension'),
+  ('53aeb794-4335-4579-b5a2-48f97cc220ed', '50 x 50 cm', 'dimension'),
+  ('df3d6623-6a82-420f-895b-94bd4713a5d9', '40 x 70 cm / 200 g', 'dimension_weight'),
+  ('6da0028f-6b3d-4c1b-ba87-c24b552f2132', '50 x 80 cm / 300 g', 'dimension_weight'),
+  ('c6650316-de67-4007-9e3b-de96bbc9840f', '30 x 30 cm / 50 g', 'dimension_weight'),
+  ('02fa854f-8067-44a3-a031-d7a9fe365fea', '90 x 150 cm / 770 g', 'dimension_weight'),
+  ('0c8c9cc6-4cc8-4a6b-8d6f-6520316d4e55', '90 x 190 cm / 1000 g', 'dimension_weight'),
+  ('9691a183-57df-4083-8f5d-18202b1fe32d', 'A la medida', 'custom'),
+  ('a9508b90-f523-41d1-aae3-1acc2b72b92d', 'Sábana de cajón', 'format'),
+  ('2784abd1-0ce1-4e55-ab0e-65dfbd483ac0', 'Cortina', 'format'),
+  ('d3d75447-86ee-41ef-a31a-c39037359b78', 'Forro de colchón', 'format'),
+  ('6df2180c-c805-4ea2-b747-3de6623f3aeb', '20 x 22', 'dimension'),
+  ('079d98c6-8f2a-4279-aec8-96a8cd2bf16f', '26 x 33', 'dimension'),
+  ('7aabd528-0274-4a0b-b744-23b981768cd4', '31 x 36', 'dimension'),
+  ('e5c74321-79d3-4fdb-88d0-da4d4bea407a', '35 x 42', 'dimension'),
+  ('7861dfbf-3450-4190-a5c7-947aaf3af818', '38 x 45', 'dimension')
+ON DUPLICATE KEY UPDATE
+  label = VALUES(label),
+  type = VALUES(type);
 
--- --------------------------------------------------------
--- Dumping data for table products
--- --------------------------------------------------------
-INSERT INTO products (id, slug, title, description, main_image, gallery, category, is_active, created_at, updated_at, is_featured, mercadolibre_url, amazon_url) VALUES
-('0544841f-5e8d-43cc-b649-ca493f935654', 'protector-de-colchon-capitonado-con-resorte', 'Protector de colchón capitonado con resorte', 'Su acolchado ligero permite proteger tu colchón al mismo tiempo que brinda mayor comodidad y confort, los resortes se ajustan muy bien para que no se mueva.', 'https://images.unsplash.com/photo-1632053003290-7f28d84a706f?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 1, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('a34babbf-ace7-475b-8dd4-ed35373a0086', 'protector-de-colchon-capitonado-de-cajon', 'Protector de colchón capitonado de cajón', 'Protección integral con ajuste tipo cajón que envuelve el colchón para evitar desplazamientos.', 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('db71c363-8177-45d9-b82b-5dd3727c6cca', 'protector-de-colchon-impermeable-funda-completa', 'Protector de colchón impermeable funda completa', 'Funda impermeable tipo duvet con cierre que cubre totalmente el colchón, protegiéndolo de líquidos y ácaros.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 1, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('919efbe1-5316-4eaf-a708-9fe8ffabd1dd', 'batas-paciente', 'Batas paciente', 'Batas diseñadas para la comodidad del paciente y facilidad de uso clínico.', 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800', '[]', 'Hospital', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('8389e124-65ee-48c3-b7dd-51bc30b3e87e', 'campos-medicos', 'Campos médicos', 'Textiles esterilizables y resistentes para entornos quirúrgicos y médicos.', 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800', '[]', 'Hospital', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('60f88a98-d51e-40b9-9e16-22bfff06af7e', 'cortinas-blackout', 'Cortinas blackout', 'Control total de la luz y privacidad, ideales para un descanso ininterrumpido.', 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 1, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('0745190c-fd47-4846-93b5-88bf2789a6cd', 'traslucidas-y-semi-traslucidas', 'Traslúcidas y semi-traslúcidas', 'Elegancia que permite el paso de luz natural, creando ambientes suaves y acogedores.', 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('46121f85-428c-4712-aaa2-04d938573796', 'toallas-de-alberca', 'Toallas de alberca', 'Toallas de gran tamaño y alta absorción, perfectas para áreas exteriores y albercas.', 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=800', '[]', 'Felpa', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 1, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('f8ae1808-3968-4a76-8e11-6c063686f44c', 'toallas-de-bano', 'Toallas de baño', 'Suavidad y absorción superior para el uso diario, diseñadas para durar.', 'https://images.unsplash.com/photo-1583912267550-d44d4a3c399a?auto=format&fit=crop&q=80&w=800', '[]', 'Felpa', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('b7bb4b92-ecd5-46a5-8816-5e7c4878b23a', 'cortinas-de-bano', 'Cortinas de baño', 'Funcionalidad y diseño para el baño, resistentes a la humedad y fáciles de lavar.', 'https://images.unsplash.com/photo-1620626011761-9963d7521476?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('d597a8ca-8c1d-4525-a2dd-d500510e89e4', 'balinesas', 'Balinesas', 'Cortinas con estilo tropical y relajado, perfectas para climas costeros.', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('d8b74054-1309-41a8-ac0c-1d59738f98ed', 'rodapie', 'Rodapié', 'Faldón elegante que oculta la base de la cama, brindando un acabado profesional.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('17f88f82-9330-4956-ae1d-86295f71dbdd', 'pie-de-cama', 'Pie de cama', 'Acento decorativo que añade una capa de color y textura al final de la cama.', 'https://images.unsplash.com/photo-1616627561950-9f746e330171?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('597a48a0-073c-4edf-873e-aa52a1f2e3f5', 'cojines', 'Cojines', 'Cojines decorativos para realzar cualquier espacio con estilo y confort.', 'https://images.unsplash.com/photo-1584132915807-fd1f5fbc078f?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('03cc4b79-111e-4879-8ee1-dbaabab01228', 'sabanas', 'Sábanas', 'Juego de sábanas suaves y resistentes, diseñadas para el uso rudo hotelero sin perder el confort.', 'https://images.unsplash.com/photo-1629949009765-40f74d943a86?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 1, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('b78297d0-0c38-44c8-8c37-3c65096779b0', 'fundas-y-protector-de-almohadas', 'Fundas y Protector de Almohadas', 'Protección esencial para prolongar la vida útil de tus almohadas con suavidad al tacto.', 'https://images.unsplash.com/photo-1584132915807-fd1f5fbc078f?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('b8027755-a210-49c5-9bf3-982f6ce6ce57', 'almohadas', 'Almohadas', 'Almohadas con relleno de alta calidad que mantienen su forma y brindan un soporte óptimo.', 'https://images.unsplash.com/photo-1574633966429-1064299b93bc?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 1, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('25ec15ff-416c-4047-82e8-2a3555334581', 'duvet-e-insertos', 'Duvet e insertos', 'Fundas duvet y rellenos suaves que aportan calidez y elegancia a cualquier habitación.', 'https://images.unsplash.com/photo-1616627561839-014173700d2d?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('3c25d004-7765-43fe-a10d-56b4d86d23b9', 'sobrecamas', 'Sobrecamas', 'Sobrecamas ligeras y decorativas, ideales para climas cálidos y una presentación impecable.', 'https://images.unsplash.com/photo-1616627561950-9f746e330171?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('9e09ce67-f182-41dc-9c95-f4f2b1a3c6c7', 'edredones', 'Edredones', 'Edredones acolchados con diseños variados que combinan estilo y funcionalidad.', 'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('fadf73d7-c7cd-47cd-bf4a-a575491119d2', 'cobertores', 'Cobertores', 'Máxima calidez para noches frescas, con texturas suaves y duraderas.', 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80&w=800', '[]', 'Blancos', 1, '2026-05-02T21:14:07.611936+00:00', '2026-05-02T21:14:07.611936+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('cedcb58e-4a13-4981-8bb4-530dd3ddd971', 'toallas-de-manos', 'Toallas de manos', 'El complemento perfecto para el baño, con la misma calidad y suavidad premium.', 'https://images.unsplash.com/photo-1583912267550-d44d4a3c399a?auto=format&fit=crop&q=80&w=800', '[]', 'Felpa', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('b617d60f-37d6-4470-a121-da7039be2bb1', 'tapete', 'Tapete', 'Tapetes de felpa absorbentes para mayor seguridad y confort al salir de la ducha.', 'https://images.unsplash.com/photo-1583912267550-d44d4a3c399a?auto=format&fit=crop&q=80&w=800', '[]', 'Felpa', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('ab9ec762-8058-4a65-b041-626f1139c146', 'faciales', 'Faciales', 'Pequeñas toallas faciales de tacto delicado, ideales para spas y hoteles.', 'https://images.unsplash.com/photo-1583912267550-d44d4a3c399a?auto=format&fit=crop&q=80&w=800', '[]', 'Felpa', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('5ad10c6a-171f-4199-aa92-cd458a15995a', 'cilindros-y-fundas-para-cilindros', 'Cilindros y Fundas para Cilindros', 'Accesorios esenciales para el soporte y confort durante tratamientos de spa.', 'https://images.unsplash.com/photo-1544161515-4af6b1d4640d?auto=format&fit=crop&q=80&w=800', '[]', 'Spa', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('d4163ebd-0b9e-459c-a42d-bc81e53275b9', 'pabellones', 'Pabellones', 'Estructuras ligeras que añaden un toque romántico y protección a la cama.', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800', '[]', 'Decorativos', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('70aa7754-8f20-4ca5-9937-865abb819028', 'servilletas', 'Servilletas', 'Servilletas de tela duraderas y fáciles de lavar, ideales para restaurantes y eventos.', 'https://images.unsplash.com/photo-1544145945-f904253db0ad?auto=format&fit=crop&q=80&w=800', '[]', 'Mantelería', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('cb166580-6ae6-4367-ba94-4b4ee7d6c886', 'manteles', 'Manteles', 'Confección de manteles a la medida para todo tipo de mesas, con gran variedad de telas.', 'https://images.unsplash.com/photo-1595113316349-9fa4ee24f884?auto=format&fit=crop&q=80&w=800', '[]', 'Mantelería', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('924dae7b-5dcd-4608-a5ab-a9e11923da0b', 'bambalinas', 'Bambalinas', 'Faldones decorativos para mesas que realzan la presentación de cualquier evento.', 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800', '[]', 'Mantelería', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('f172efde-b0a8-4a51-b87c-980ca0acd5e6', 'listones', 'Listones', 'Detalles decorativos para sillas y mantelería que aportan un toque de color.', 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800', '[]', 'Mantelería', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('2047ad97-ca85-43d5-a8ca-30002175cbb7', 'cubresillas', 'Cubresillas', 'Fundas ajustables para sillas que transforman instantáneamente cualquier salón.', 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800', '[]', 'Mantelería', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('b2f09215-af9c-4dab-926a-06c847951945', 'tortilleros-portacalientes', 'Tortilleros portacalientes', 'Accesorios tradicionales para mantener el calor de los alimentos en la mesa.', 'https://images.unsplash.com/photo-1595113316349-9fa4ee24f884?auto=format&fit=crop&q=80&w=800', '[]', 'Mantelería', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('70c1011d-e1ee-49db-9d2c-4cfa9f036a9d', 'bolsas', 'Bolsas', 'Bolsas de tela personalizables para promoción y uso diario, ecológicas y resistentes.', 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=800', '[]', 'Promocionales', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('6df18046-6dfd-4b37-8a07-058cc33274a0', 'playeras', 'Playeras', 'Playeras de algodón de alta calidad, listas para personalización con tu marca.', 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800', '[]', 'Promocionales', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx'),
-('7a92d670-732f-4025-8cd3-14e931bf392d', 'mandiles', 'Mandiles', 'Mandiles de trabajo resistentes y funcionales para diversos usos comerciales.', 'https://images.unsplash.com/photo-1581622558663-b2e33377dfb2?auto=format&fit=crop&q=80&w=800', '[]', 'Promocionales', 1, '2026-05-02T21:14:35.382265+00:00', '2026-05-02T21:14:35.382265+00:00', 0, 'https://www.mercadolibre.com.mx', 'https://www.amazon.com.mx');
+-- 3) Productos del catálogo
+INSERT INTO products
+  (id, slug, title, description, main_image, gallery, category, is_active, is_featured, mercadolibre_url, amazon_url)
+VALUES
+  ('fa9cf47a-b9ed-43cb-aed2-9f1759d0d0a7', 'protector-de-colchon-capitonado-de-cajon', 'Protector de colchón capitonado de cajón', 'Una opción que brinda comodidad y protege el colchón en su superficie y laterales.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 1, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('338cb3e4-3575-4da6-b4ad-31f559843183', 'protector-de-colchon-capitonado-con-resorte', 'Protector de colchón capitonado con resorte', 'Su acolchado ligero protege el colchón y brinda mayor comodidad; los resortes ayudan a evitar que se mueva y su tela es fresca.', '/images/productos/protector_de_colchon_capitonado_con_resorte.jpeg', CAST('[]' AS JSON), 'Blancos', 1, 1, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('c58a89a8-8149-4855-b5e8-08c01e745fe1', 'protector-de-colchon-impermeable-funda-completa', 'Protector de colchón impermeable funda completa', 'Protector impermeable tipo duvet con cierre que cubre totalmente el colchón; su tela transpirable no genera calor.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('e0f115e7-1a79-4b86-beb9-107f85beaec2', 'sabanas', 'Sábanas', 'Sábanas diseñadas para brindar frescura, durabilidad y suavidad; también disponibles como sábanas de cajón.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 1, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('64f53151-bb61-43f0-9235-598a956d091c', 'fundas-y-protector-de-almohadas', 'Fundas y protector de almohadas', 'Fundas y protectores para almohada elaborados en tela percal, con opciones estándar y king size.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('0985f462-ceb0-4b15-b8bc-3de70383b8e0', 'almohadas', 'Almohadas', 'Almohadas con forro y relleno sintético, suaves, durables y diseñadas para no generar calor.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 1, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('3c229b21-f5f0-4617-98be-4a46c313c69b', 'duvet-e-insertos', 'Duvet e insertos', 'Funda duvet tipo sobre para sujetar fácilmente el inserto; el inserto puede elegirse desde ligero hasta muy esponjoso.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('8db922a0-74b1-478d-9874-0f01017287e2', 'duvet-y-sobrecamas', 'Duvet y sobrecamas', 'Opciones ligeras y decorativas, lisas o estampadas, en tela waffle o con texturas variadas.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('95cd79d7-718e-46f3-bb0d-da45c8908fac', 'edredones', 'Edredones', 'Edredones con relleno confortable y acabado suave que brindan calidez equilibrada y una presentación elegante.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('8984e83b-fefa-4f50-a2cd-152a6960ed75', 'cobertores', 'Cobertores', 'Cobertores de tela polar con textura ligera y cálida, ideales para complementar la cama.', '/images/logo.png', CAST('[]' AS JSON), 'Blancos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('00ce97ba-2b71-437a-9438-ee9aa2211c85', 'batas-spa', 'Batas', 'Batas de spa en tela waffle tipo kimono, ligeras y altamente absorbentes, ideales para relajación.', '/images/logo.png', CAST('[]' AS JSON), 'Spa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('c2f0e71a-2f40-448c-b074-346817767179', 'cojin-cilindro-y-fundas-cilindros', 'Cojín cilindro y fundas cilindros', 'Cojín cilíndrico con funda tipo spa, diseñado para brindar soporte cómodo y relajación.', '/images/logo.png', CAST('[]' AS JSON), 'Spa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('e7a1bd59-b8cd-450b-94d8-d576495b3083', 'cojin-careta-y-funda-caretas', 'Cojín careta y funda caretas', 'Cojín careta con funda tipo spa que brinda soporte ergonómico y confort durante tratamientos.', '/images/logo.png', CAST('[]' AS JSON), 'Spa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('4cf7c0ef-5353-4ed3-9de5-c009df214d48', 'batas-paciente', 'Batas paciente', 'Batas médicas para paciente, ligeras y confortables, diseñadas para facilitar la movilidad y brindar discreción.', '/images/logo.png', CAST('[]' AS JSON), 'Hospital', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('c8081967-3590-440c-aaad-af70f528e243', 'campos-medicos', 'Campos médicos', 'Campos médicos con tejidos resistentes y de fácil manejo que brindan protección y control durante procedimientos.', '/images/logo.png', CAST('[]' AS JSON), 'Hospital', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('47c1f3e9-b44b-410a-9baa-3203352ea675', 'cortinas-blackout', 'Cortinas blackout', 'Cortinas que bloquean la luz al 100%, ofrecen mayor privacidad y crean un ambiente acogedor.', '/images/productos/cortina_blackout.jpeg', CAST('[]' AS JSON), 'Decorativos', 1, 1, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('b3063196-0434-43ad-ba37-ba36fcd1a1c6', 'cortinas-traslucidas', 'Cortinas traslúcidas', 'Cortinas que dejan pasar la luz natural, aportando un toque de elegancia.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('3660ec90-fb2c-4930-ba35-3736fc224b3f', 'cortinas-semi-traslucidas', 'Cortinas semi-traslúcidas', 'Cortinas disponibles en gran variedad de colores, diseños y texturas.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('7152be27-0949-4695-9e4c-829def517ff4', 'cortinas-de-bano', 'Cortinas de baño', 'Cortinas resistentes y funcionales que protegen contra salpicaduras y ayudan a mantener espacios secos.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('53d988cd-5e31-40de-9dc7-d01038bb03b7', 'balinesas', 'Balinesas', 'Textiles para balinesas que aportan durabilidad, frescura y una presentación atractiva en exteriores.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('b91b88ff-fa57-400e-85bc-c975ac897214', 'rodapie', 'Rodapié', 'Rodapié textil resistente y funcional que protege la base de la cama y mejora la presentación de la habitación.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('b2094959-a301-4d85-abcc-f79f82b25422', 'pie-de-cama', 'Pie de cama', 'Pie de cama con textura suave y diseño decorativo que aporta calidez y estilo.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('79cdc012-c745-4602-b4db-4ab2c1483cf6', 'cojines', 'Cojines', 'Cojines decorativos con diseños versátiles y textura confortable que aportan estilo y personalidad.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('fe40fce2-e6d2-40a0-8221-80ee75e41e75', 'pabellon', 'Pabellón', 'Pabellón de cama ligero y envolvente que aporta protección y estilo a la experiencia de descanso.', '/images/logo.png', CAST('[]' AS JSON), 'Decorativos', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('3c7d8521-6422-4b9e-9dcc-ddebd4d73a0d', 'toalla-de-manos', 'Toalla de manos', 'Toalla de manos de suavidad premium y alta absorción para una sensación impecable de higiene.', '/images/logo.png', CAST('[]' AS JSON), 'Felpa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('e635c23c-8bfa-4ef5-8684-404d1e37cf37', 'tapete-felpa', 'Tapete felpa', 'Tapete de felpa con textura suave y gran absorción, diseñado para mantener espacios secos y limpios.', '/images/logo.png', CAST('[]' AS JSON), 'Felpa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('579e823e-2103-41e6-8f07-abe2f191a2d7', 'faciales-felpa', 'Faciales felpa', 'Toallas faciales de felpa con textura extra suave y alta absorción.', '/images/logo.png', CAST('[]' AS JSON), 'Felpa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('d5c4031f-eb6d-4fea-abe0-b8a456cdcd48', 'toallas-de-bano', 'Toallas de baño', 'Toallas de baño suaves y absorbentes, diseñadas para mantener su desempeño después de múltiples ciclos de lavado.', '/images/logo.png', CAST('[]' AS JSON), 'Felpa', 1, 1, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('7ab9a28e-faf3-460f-87d7-62d868c408aa', 'toallas-de-alberca-felpa', 'Toallas de alberca felpa', 'Toallas de alberca de gran formato y alta absorción, ideales para exteriores.', '/images/logo.png', CAST('[]' AS JSON), 'Felpa', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('198da116-762f-402c-96bc-e2c304254f98', 'servilletas', 'Servilletas', 'Servilletas de tela resistentes y elegantes que complementan la mesa con una presentación impecable.', '/images/logo.png', CAST('[]' AS JSON), 'Mantelería', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('77241df3-a24b-4354-83d3-81f591335a9b', 'manteles', 'Manteles', 'Manteles en formatos cuadrados, rectangulares y redondos, diseñados para adaptarse a cualquier montaje.', '/images/logo.png', CAST('[]' AS JSON), 'Mantelería', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('ebfa7a6e-70e2-4b9d-af69-5eb698be2a87', 'bambalinas', 'Bambalinas', 'Bambalinas con acabado textil elegante que aportan un remate decorativo limpio y uniforme.', '/images/logo.png', CAST('[]' AS JSON), 'Mantelería', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('9c4cd58b-d19e-422a-bc41-40401c6f28ea', 'cubresillas', 'Cubre Sillas', 'Cubre sillas con ajuste preciso y acabado elegante que aportan uniformidad y protección al mobiliario.', '/images/logo.png', CAST('[]' AS JSON), 'Mantelería', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('214c63dc-138b-4a3f-a59d-4df90e1bf57d', 'tortilleros-porta-calientes', 'Tortilleros porta calientes', 'Tortilleros con aislamiento eficiente que conservan la temperatura por más tiempo.', '/images/logo.png', CAST('[]' AS JSON), 'Mantelería', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('c3823359-2df0-44c2-944b-d28718b884cd', 'bolsas-amenities', 'Bolsas amenities', 'Bolsas de amenities en manta, ideales para organizar y resguardar artículos en habitación.', '/images/logo.png', CAST('[]' AS JSON), 'Promocionales', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('35471985-0dba-4608-803d-0aadeb93e903', 'bolsas-de-manta', 'Bolsas de Manta', 'Bolsas de manta prácticas y versátiles para uso diario o promocional, disponibles en cinco medidas publicadas en el catálogo.', '/images/logo.png', CAST('[]' AS JSON), 'Promocionales', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('dcae0d44-3558-4b84-83f9-a27f669fb201', 'playeras-promocionales', 'Playeras promocionales', 'Playeras textiles personalizables para fortalecer la identidad de marca.', '/images/logo.png', CAST('[]' AS JSON), 'Promocionales', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/'),
+  ('eb5ea67f-201d-46a2-8689-5bb8f1c07708', 'mandiles-promocionales', 'Mandiles promocionales', 'Mandiles textiles personalizables que combinan funcionalidad y presencia de marca.', '/images/logo.png', CAST('[]' AS JSON), 'Promocionales', 1, 0, 'https://www.mercadolibre.com.mx/', 'https://www.amazon.com.mx/')
+ON DUPLICATE KEY UPDATE
+  title = VALUES(title),
+  description = VALUES(description),
+  category = VALUES(category),
+  is_active = VALUES(is_active),
+  is_featured = VALUES(is_featured),
+  mercadolibre_url = VALUES(mercadolibre_url),
+  amazon_url = VALUES(amazon_url),
+  main_image = VALUES(main_image),
+  gallery = VALUES(gallery);
 
--- --------------------------------------------------------
--- Dumping data for table product_variants
--- --------------------------------------------------------
-INSERT INTO product_variants (id, product_id, fabric_type_id, measurement_id, sku, price, stock, is_active, created_at) VALUES
-('f96cefdb-338e-4273-8e04-b835dbc18d59', 'cccccccc-0001-0001-0001-000000000001', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000001', 'SAB-ALG-TWIN', 450, 50, 1, '2026-04-26T22:11:42.862563+00:00'),
-('52165f01-5127-486d-a3a9-620d746b4e2a', 'cccccccc-0001-0001-0001-000000000001', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000002', 'SAB-ALG-FULL', 550, 40, 1, '2026-04-26T22:11:42.862563+00:00'),
-('59b0ecd1-0223-42e9-8281-5cafd8e5fb8b', 'cccccccc-0001-0001-0001-000000000001', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000003', 'SAB-ALG-QUEEN', 650, 35, 1, '2026-04-26T22:11:42.862563+00:00'),
-('c7258308-ff90-409b-bd45-abc787b14c32', 'cccccccc-0001-0001-0001-000000000001', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000004', 'SAB-ALG-KING', 750, 30, 1, '2026-04-26T22:11:42.862563+00:00'),
-('2b2cb8b7-465d-4926-8a20-69c88879514e', 'cccccccc-0001-0001-0001-000000000002', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000001', 'SAB-PER-TWIN', 520, 45, 1, '2026-04-26T22:11:42.862563+00:00'),
-('2085a91c-180c-4006-b899-5abeb2bb6f64', 'cccccccc-0001-0001-0001-000000000002', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000003', 'SAB-PER-QUEEN', 720, 30, 1, '2026-04-26T22:11:42.862563+00:00'),
-('959ed00f-83c4-411c-af48-977e5e9ccd54', 'cccccccc-0001-0001-0001-000000000002', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000004', 'SAB-PER-KING', 820, 25, 1, '2026-04-26T22:11:42.862563+00:00'),
-('b077bbfc-9ce1-4231-83a7-11b49424b6c2', 'cccccccc-0001-0001-0001-000000000003', 'aaaaaaaa-0001-0001-0001-000000000003', 'bbbbbbbb-0001-0001-0001-000000000003', 'SAB-SAT-QUEEN', 950, 20, 1, '2026-04-26T22:11:42.862563+00:00'),
-('a65f2b9d-b646-4be7-9957-7b44dddecf9a', 'cccccccc-0001-0001-0001-000000000003', 'aaaaaaaa-0001-0001-0001-000000000003', 'bbbbbbbb-0001-0001-0001-000000000004', 'SAB-SAT-KING', 1100, 15, 1, '2026-04-26T22:11:42.862563+00:00'),
-('8b644964-df70-4ce0-8c02-e6d4f718d330', 'cccccccc-0001-0001-0001-000000000004', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000005', 'ALM-MIC-50X70', 180, 100, 1, '2026-04-26T22:11:42.862563+00:00'),
-('726bc636-608d-41ca-9834-47bfb7c26e16', 'cccccccc-0001-0001-0001-000000000004', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000006', 'ALM-MIC-70X140', 220, 80, 1, '2026-04-26T22:11:42.862563+00:00'),
-('aad53e0e-c3f8-4c6a-94fb-a6d962dc45ae', 'cccccccc-0001-0001-0001-000000000005', 'aaaaaaaa-0001-0001-0001-000000000005', 'bbbbbbbb-0001-0001-0001-000000000005', 'ALM-BAM-50X70', 240, 60, 1, '2026-04-26T22:11:42.862563+00:00'),
-('90ac52d5-fc04-4648-9295-e20d76e87d6c', 'cccccccc-0001-0001-0001-000000000005', 'aaaaaaaa-0001-0001-0001-000000000005', 'bbbbbbbb-0001-0001-0001-000000000006', 'ALM-BAM-70X140', 300, 45, 1, '2026-04-26T22:11:42.862563+00:00'),
-('ec8f8d94-c95b-40bd-bab8-89e2a9c387dd', 'cccccccc-0001-0001-0001-000000000006', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000006', 'TOA-SPA-70X140', 280, 200, 1, '2026-04-26T22:11:42.862563+00:00'),
-('fcbdb151-b2af-4326-9876-d16a7dd9b7b1', 'cccccccc-0001-0001-0001-000000000006', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000007', 'TOA-SPA-100X150', 350, 150, 1, '2026-04-26T22:11:42.862563+00:00'),
-('8378e739-466b-4fdf-a457-df3e9e46da51', 'cccccccc-0001-0001-0001-000000000007', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000005', 'TOA-CARA-50X70', 95, 300, 1, '2026-04-26T22:11:42.862563+00:00'),
-('ff3e5f46-6f13-45f7-82f1-cec4f61c6ec0', 'cccccccc-0001-0001-0001-000000000008', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000007', 'TOA-PIS-100X150', 320, 120, 1, '2026-04-26T22:11:42.862563+00:00'),
-('e8ffdc46-f7ed-406e-831a-4a5f0bd8e8ac', 'cccccccc-0001-0001-0001-000000000009', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000003', 'COB-PLU-QUEEN', 1800, 20, 1, '2026-04-26T22:11:42.862563+00:00'),
-('5aa408bf-d557-4e43-ae48-67d4460e8568', 'cccccccc-0001-0001-0001-000000000009', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000004', 'COB-PLU-KING', 2200, 15, 1, '2026-04-26T22:11:42.862563+00:00'),
-('9ae2d4ce-8a98-49fa-8df0-6a7854678da7', 'cccccccc-0001-0001-0001-000000000010', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000002', 'COB-FIB-FULL', 750, 35, 1, '2026-04-26T22:11:42.862563+00:00'),
-('dac689f1-653b-4af3-9aca-4b6c77592138', 'cccccccc-0001-0001-0001-000000000010', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000003', 'COB-FIB-QUEEN', 900, 30, 1, '2026-04-26T22:11:42.862563+00:00'),
-('09e6d6d3-1e0b-4697-bfaa-7231e5054dcc', 'cccccccc-0001-0001-0001-000000000010', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000004', 'COB-FIB-KING', 1050, 25, 1, '2026-04-26T22:11:42.862563+00:00'),
-('1d33f165-7787-4218-9474-9912d21f88a9', 'cccccccc-0001-0001-0001-000000000011', 'aaaaaaaa-0001-0001-0001-000000000006', NULL, 'MAN-LIN-STD', 380, 80, 1, '2026-04-26T22:11:42.862563+00:00'),
-('0f1e88ba-8ade-407d-9d94-785f6a50ff92', 'cccccccc-0001-0001-0001-000000000012', 'aaaaaaaa-0001-0001-0001-000000000007', NULL, 'MAN-JAC-STD', 580, 40, 1, '2026-04-26T22:11:42.862563+00:00'),
-('04eaac73-c0cd-45a2-b494-9f87e03db90c', 'cccccccc-0001-0001-0001-000000000013', 'aaaaaaaa-0001-0001-0001-000000000005', 'bbbbbbbb-0001-0001-0001-000000000002', 'CCO-BAM-FULL', 420, 30, 1, '2026-04-26T22:11:42.862563+00:00'),
-('facbd5b2-3c06-4a5e-987e-f53c0f1357de', 'cccccccc-0001-0001-0001-000000000013', 'aaaaaaaa-0001-0001-0001-000000000005', 'bbbbbbbb-0001-0001-0001-000000000003', 'CCO-BAM-QUEEN', 490, 25, 1, '2026-04-26T22:11:42.862563+00:00'),
-('8da24c5f-f634-4015-9ef7-e44267482e80', 'cccccccc-0001-0001-0001-000000000013', 'aaaaaaaa-0001-0001-0001-000000000005', 'bbbbbbbb-0001-0001-0001-000000000004', 'CCO-BAM-KING', 560, 20, 1, '2026-04-26T22:11:42.862563+00:00'),
-('b908ace3-5260-4010-975d-5bf25d9baeb6', 'cccccccc-0001-0001-0001-000000000014', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000003', 'CCO-ACO-QUEEN', 680, 22, 1, '2026-04-26T22:11:42.862563+00:00'),
-('b922fd52-bae8-49d6-a2e7-8e5c46d848cd', 'cccccccc-0001-0001-0001-000000000014', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000004', 'CCO-ACO-KING', 780, 18, 1, '2026-04-26T22:11:42.862563+00:00'),
-('0912af43-1df8-4ba6-8ac7-8ac6372b093c', 'cccccccc-0001-0001-0001-000000000015', 'aaaaaaaa-0001-0001-0001-000000000001', NULL, 'DEL-CAM-STD', 120, 150, 1, '2026-04-26T22:11:42.862563+00:00'),
-('7e936c64-b553-4426-a7fa-18c6da9d27a0', 'cccccccc-0001-0001-0001-000000000016', 'aaaaaaaa-0001-0001-0001-000000000001', NULL, 'BAT-SPA-UNI', 480, 80, 1, '2026-04-26T22:11:42.862563+00:00'),
-('2f4e8b1c-c9c0-4698-8ad5-8eecdbee5cf4', 'cccccccc-0001-0001-0001-000000000017', 'aaaaaaaa-0001-0001-0001-000000000003', 'bbbbbbbb-0001-0001-0001-000000000005', 'FUN-SAT-50X70', 160, 120, 1, '2026-04-26T22:11:42.862563+00:00'),
-('58567d5c-21ef-4386-85d3-10fbd1f271d3', 'cccccccc-0001-0001-0001-000000000017', 'aaaaaaaa-0001-0001-0001-000000000003', 'bbbbbbbb-0001-0001-0001-000000000006', 'FUN-SAT-70X140', 200, 90, 1, '2026-04-26T22:11:42.862563+00:00'),
-('76c06af2-6925-4807-8413-df85bfd0dcff', 'cccccccc-0001-0001-0001-000000000018', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000003', 'FAL-PER-QUEEN', 310, 35, 1, '2026-04-26T22:11:42.862563+00:00'),
-('ceea75d0-0799-46ce-bfa4-bf6b7ec27c91', 'cccccccc-0001-0001-0001-000000000018', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000004', 'FAL-PER-KING', 360, 28, 1, '2026-04-26T22:11:42.862563+00:00'),
-('8c4a0383-2c3f-4067-be54-db701ea55afd', 'cccccccc-0001-0001-0001-000000000019', 'aaaaaaaa-0001-0001-0001-000000000006', 'bbbbbbbb-0001-0001-0001-000000000008', 'SER-LIN-45X45', 45, 500, 1, '2026-04-26T22:11:42.862563+00:00'),
-('aa11b464-535f-4ce5-ad68-9c3f17acbf52', 'cccccccc-0001-0001-0001-000000000020', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000008', 'COJ-JAC-45X45', 280, 60, 1, '2026-04-26T22:11:42.862563+00:00'),
-('6265dfd1-26b5-4034-b046-b4555d1fdf58', '0544841f-5e8d-43cc-b649-ca493f935654', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('2ac943cb-e52c-4744-89b2-b18d87002cc6', '0544841f-5e8d-43cc-b649-ca493f935654', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('a3e4b19e-0750-47ef-892c-29d3c5944174', '0544841f-5e8d-43cc-b649-ca493f935654', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('05a5c5ae-fd61-4f63-8191-423eedf5431a', '0544841f-5e8d-43cc-b649-ca493f935654', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('56a6a296-0727-4072-b3ae-142b1ff5174e', 'a34babbf-ace7-475b-8dd4-ed35373a0086', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('93958569-d225-4b80-963d-3de4692df467', 'a34babbf-ace7-475b-8dd4-ed35373a0086', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('4a25b1b5-65d3-4ae4-b54b-103d76d72cbd', 'a34babbf-ace7-475b-8dd4-ed35373a0086', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('0936c295-1fef-4b8f-8d5a-a722b9f08b7b', 'a34babbf-ace7-475b-8dd4-ed35373a0086', 'aaaaaaaa-0001-0001-0001-000000000008', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('020fa400-2968-41a2-b4b8-4a11035f9457', 'db71c363-8177-45d9-b82b-5dd3727c6cca', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('a08601ef-5d91-42d1-8628-2e067ef2bb24', 'db71c363-8177-45d9-b82b-5dd3727c6cca', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('867aea52-1757-4e45-9758-c61c03543afe', 'db71c363-8177-45d9-b82b-5dd3727c6cca', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('f21dc7c9-4dd5-4f46-9c5e-6e9a3fb18314', 'db71c363-8177-45d9-b82b-5dd3727c6cca', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('75d21fbf-a8aa-4524-9e8d-5cd2b220d40c', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('23fb5e5a-f850-419a-abc1-13e4213e1c99', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('d13ced5c-849e-47d2-9112-3ba6d7e73ebd', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('3e91fbe3-f481-4142-a930-7c7f816d64c4', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('16b0dcab-26df-4eb2-b6ca-d3efa00655d3', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('3b66876b-0519-4595-b829-3ca79cae711f', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('e8e65ff8-5f77-4362-865c-c4a36e31af63', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('742d4f47-efe9-4986-aef7-ed58752d0069', '03cc4b79-111e-4879-8ee1-dbaabab01228', 'aaaaaaaa-0001-0001-0001-000000000002', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('c2f4cd04-61b8-4958-bb81-845724eb363a', 'b78297d0-0c38-44c8-8c37-3c65096779b0', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('f4d3c9e9-014e-4a87-b0b8-fc63f0938f9d', 'b78297d0-0c38-44c8-8c37-3c65096779b0', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('3bbb5bd7-bb18-4c1c-a98f-eea3707682fc', 'b8027755-a210-49c5-9bf3-982f6ce6ce57', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('9180d5c7-dcf6-4bdd-a089-78744f34dde8', 'b8027755-a210-49c5-9bf3-982f6ce6ce57', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('e3c6d6bd-2ccf-4f5a-bca6-3f814501ba97', '25ec15ff-416c-4047-82e8-2a3555334581', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('5c258d93-eca2-4def-bb5f-7533b7eb47f0', '25ec15ff-416c-4047-82e8-2a3555334581', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('1e30713f-b5ed-4393-8b6c-726c4ef1e069', '25ec15ff-416c-4047-82e8-2a3555334581', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('e2a97986-3fba-46e4-8e9f-7f6cca132e6c', '25ec15ff-416c-4047-82e8-2a3555334581', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('242aac5c-abff-4b7b-8736-af546f88697f', '3c25d004-7765-43fe-a10d-56b4d86d23b9', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('41529229-9008-4e33-a580-96c4536952fa', '3c25d004-7765-43fe-a10d-56b4d86d23b9', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('eaa75f6e-495c-4598-961e-05923fe66cc7', '3c25d004-7765-43fe-a10d-56b4d86d23b9', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('c89aa90f-a4db-40b0-bda7-9c51d0ed19a8', '3c25d004-7765-43fe-a10d-56b4d86d23b9', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('83b46ea5-223b-4a48-b41a-24a1a969f28b', '9e09ce67-f182-41dc-9c95-f4f2b1a3c6c7', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('3818d051-0c90-4f9d-af54-e00efca8cfae', '9e09ce67-f182-41dc-9c95-f4f2b1a3c6c7', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('46035a28-b400-49ec-b8e5-2387a691314e', '9e09ce67-f182-41dc-9c95-f4f2b1a3c6c7', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('eef9f557-412d-411b-996d-f95e3bb1c7a0', '9e09ce67-f182-41dc-9c95-f4f2b1a3c6c7', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('412b3cea-0221-491c-9a3f-55774012fe07', 'fadf73d7-c7cd-47cd-bf4a-a575491119d2', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('9341d5ae-95ce-4e2c-b40b-7d2747a7bd57', 'fadf73d7-c7cd-47cd-bf4a-a575491119d2', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000002', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('a5f96349-3596-4bc0-bb7b-2492a42b2730', 'fadf73d7-c7cd-47cd-bf4a-a575491119d2', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000003', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('73c68333-0e0a-4296-b500-736999a77442', 'fadf73d7-c7cd-47cd-bf4a-a575491119d2', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:07.611936+00:00'),
-('5e932284-6129-4611-a088-1f2617e3ba28', '5ad10c6a-171f-4199-aa92-cd458a15995a', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('8da6ce2e-c0f4-491e-a95f-545f91e738d9', '919efbe1-5316-4eaf-a708-9fe8ffabd1dd', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000010', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('b5d29723-aecd-4f64-9ce6-832001779904', '8389e124-65ee-48c3-b7dd-51bc30b3e87e', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('af0cdc7a-bc4f-4cf4-8124-52682a9dd07a', '60f88a98-d51e-40b9-9e16-22bfff06af7e', 'aaaaaaaa-0001-0001-0001-000000000011', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('3a97906d-f212-46b1-8d11-125fd965dcd3', '0745190c-fd47-4846-93b5-88bf2789a6cd', 'aaaaaaaa-0001-0001-0001-000000000011', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('463b909b-e241-4966-9cb8-3ffcdd070e42', 'b7bb4b92-ecd5-46a5-8816-5e7c4878b23a', 'aaaaaaaa-0001-0001-0001-000000000004', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('63226bb4-e24e-43db-8128-328342ec5921', 'd597a8ca-8c1d-4525-a2dd-d500510e89e4', 'aaaaaaaa-0001-0001-0001-000000000006', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('8097f0fe-0078-4f9f-92e5-8a41b6a365a6', 'd8b74054-1309-41a8-ac0c-1d59738f98ed', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000001', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('b6499e5d-70de-4ca4-9c58-0c2ecd52fc72', 'd8b74054-1309-41a8-ac0c-1d59738f98ed', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000004', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('6ac433c3-859e-4559-8de4-b01db9397bbc', '17f88f82-9330-4956-ae1d-86295f71dbdd', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('9776d7d7-39fd-41f5-956c-e3c1d84b4fba', '597a48a0-073c-4edf-873e-aa52a1f2e3f5', 'aaaaaaaa-0001-0001-0001-000000000007', 'bbbbbbbb-0001-0001-0001-000000000008', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('98ed0613-5529-46ce-a479-ada36dac202f', 'd4163ebd-0b9e-459c-a42d-bc81e53275b9', 'aaaaaaaa-0001-0001-0001-000000000003', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('099d4700-d824-4b23-bfcc-f2e191cdbc81', '70aa7754-8f20-4ca5-9937-865abb819028', 'aaaaaaaa-0001-0001-0001-000000000011', 'bbbbbbbb-0001-0001-0001-000000000008', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('7b547e85-dd68-46ca-af66-da02b13bb27a', 'cb166580-6ae6-4367-ba94-4b4ee7d6c886', 'aaaaaaaa-0001-0001-0001-000000000011', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('5021883a-93a8-4a23-8b8f-6499bd8e3e34', '924dae7b-5dcd-4608-a5ab-a9e11923da0b', 'aaaaaaaa-0001-0001-0001-000000000011', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('dcce7499-e02d-4f8e-8328-7d16a2cfecc6', 'f172efde-b0a8-4a51-b87c-980ca0acd5e6', 'aaaaaaaa-0001-0001-0001-000000000003', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('ad1f09fc-10f1-40cc-81cb-b5d85bb3ebbd', '2047ad97-ca85-43d5-a8ca-30002175cbb7', 'aaaaaaaa-0001-0001-0001-000000000011', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('006c9a29-5894-4435-9ab2-8d8e6c1fd906', 'b2f09215-af9c-4dab-926a-06c847951945', 'aaaaaaaa-0001-0001-0001-000000000009', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('21e74d75-3c17-49e1-83ed-99ccc77a7ffd', '70c1011d-e1ee-49db-9d2c-4cfa9f036a9d', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000009', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('8b618a41-a2b6-4757-82ea-eb70aba9dd02', '6df18046-6dfd-4b37-8a07-058cc33274a0', 'aaaaaaaa-0001-0001-0001-000000000001', 'bbbbbbbb-0001-0001-0001-000000000010', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('1733630a-bd35-40f6-8fa7-35703db9c44a', '7a92d670-732f-4025-8cd3-14e931bf392d', 'aaaaaaaa-0001-0001-0001-000000000012', 'bbbbbbbb-0001-0001-0001-000000000010', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('72837e7e-19e3-4b97-93a9-3700b94ec4c0', '46121f85-428c-4712-aaa2-04d938573796', 'aaaaaaaa-0001-0001-0001-000000000010', 'bbbbbbbb-0001-0001-0001-000000000011', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('589a3224-6db9-450a-8c8c-1e8562831e09', 'f8ae1808-3968-4a76-8e11-6c063686f44c', 'aaaaaaaa-0001-0001-0001-000000000010', 'bbbbbbbb-0001-0001-0001-000000000006', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('05cb6257-5779-4e4a-a5a6-44140a1b8992', 'cedcb58e-4a13-4981-8bb4-530dd3ddd971', 'aaaaaaaa-0001-0001-0001-000000000010', 'bbbbbbbb-0001-0001-0001-000000000013', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('21ad6b1e-d691-4504-8aa8-225911accaac', 'b617d60f-37d6-4470-a121-da7039be2bb1', 'aaaaaaaa-0001-0001-0001-000000000010', 'bbbbbbbb-0001-0001-0001-000000000007', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00'),
-('74b05bc7-ccac-4ffc-80e8-797238dd70c7', 'ab9ec762-8058-4a65-b041-626f1139c146', 'aaaaaaaa-0001-0001-0001-000000000010', 'bbbbbbbb-0001-0001-0001-000000000012', NULL, NULL, 0, 1, '2026-05-02T21:14:35.382265+00:00');
+-- 4) Variantes de producto
+-- Se eliminan únicamente las variantes de los productos publicados en este catálogo para no conservar opciones obsoletas.
+DELETE pv
+FROM product_variants pv
+JOIN products p ON p.id = pv.product_id
+WHERE p.slug IN (
+  'protector-de-colchon-capitonado-de-cajon',
+  'protector-de-colchon-capitonado-con-resorte',
+  'protector-de-colchon-impermeable-funda-completa',
+  'sabanas',
+  'fundas-y-protector-de-almohadas',
+  'almohadas',
+  'duvet-e-insertos',
+  'duvet-y-sobrecamas',
+  'edredones',
+  'cobertores',
+  'batas-spa',
+  'cojin-cilindro-y-fundas-cilindros',
+  'cojin-careta-y-funda-caretas',
+  'batas-paciente',
+  'campos-medicos',
+  'cortinas-blackout',
+  'cortinas-traslucidas',
+  'cortinas-semi-traslucidas',
+  'cortinas-de-bano',
+  'balinesas',
+  'rodapie',
+  'pie-de-cama',
+  'cojines',
+  'pabellon',
+  'toalla-de-manos',
+  'tapete-felpa',
+  'faciales-felpa',
+  'toallas-de-bano',
+  'toallas-de-alberca-felpa',
+  'servilletas',
+  'manteles',
+  'bambalinas',
+  'cubresillas',
+  'tortilleros-porta-calientes',
+  'bolsas-amenities',
+  'bolsas-de-manta',
+  'playeras-promocionales',
+  'mandiles-promocionales'
+);
 
--- --------------------------------------------------------
--- Stored Procedures for Searching Products
--- --------------------------------------------------------
-DELIMITER //
+-- Se resuelven las relaciones por slug/name/label para que el seed funcione aunque ya existan entidades con IDs previos.
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '65fad9be-1f67-4aba-a43d-d4693b1ab8d8', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Individual'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-de-cajon'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
 
-DROP PROCEDURE IF EXISTS sp_search_products //
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '0e8b4234-b755-425e-bc97-88625f473288', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Matrimonial'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-de-cajon'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'bcf570a7-72e8-4ee8-b542-6d6898b886d7', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Queen Size'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-de-cajon'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '472c6262-b6b8-4cb8-9bf1-b7823bed18f5', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'King Size'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-de-cajon'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '7872ddba-3d4d-4521-bff7-513498751a45', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Individual'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-con-resorte'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '8aec1d3d-0d3a-4694-b80a-9717158eddd4', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Matrimonial'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-con-resorte'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '3e5d67e1-d7d3-450f-ac75-644c4676470a', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Queen Size'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-con-resorte'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'ba1310fc-fbec-4348-ad8b-cbfb71bd0ce3', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'King Size'
+JOIN fabric_types f ON f.name = 'Poliéster satinado a rayas con relleno Delcron'
+WHERE p.slug = 'protector-de-colchon-capitonado-con-resorte'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'ba4544f6-8b15-458f-a070-68004e7ff99e', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Individual'
+JOIN fabric_types f ON f.name = '50% algodón / 50% poliéster con poliuretano 100%'
+WHERE p.slug = 'protector-de-colchon-impermeable-funda-completa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '32f03ff0-523e-4d83-8b53-0b3d91250bd5', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Matrimonial'
+JOIN fabric_types f ON f.name = '50% algodón / 50% poliéster con poliuretano 100%'
+WHERE p.slug = 'protector-de-colchon-impermeable-funda-completa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '32b565f3-9991-497c-9ede-9b28186dc11c', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Queen Size'
+JOIN fabric_types f ON f.name = '50% algodón / 50% poliéster con poliuretano 100%'
+WHERE p.slug = 'protector-de-colchon-impermeable-funda-completa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c7adffd4-7a72-46e7-b410-f9d8eadc27bf', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'King Size'
+JOIN fabric_types f ON f.name = '50% algodón / 50% poliéster con poliuretano 100%'
+WHERE p.slug = 'protector-de-colchon-impermeable-funda-completa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '46e7c33e-f910-450b-ab1c-dbb37c65855e', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '160 x 270 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '94d3a243-7fe1-4fe3-8a55-5e00267fe9c5', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '160 x 270 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '258b160a-67c4-49ed-b974-5b9004890896', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '160 x 270 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '1ff78691-4345-4cf6-8163-d0df7017219e', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '377d715a-b9a3-4dc1-94c0-3effcc304410', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '7c5352f0-e2bb-4996-9df2-369c15a01971', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '6f0fd979-ec29-4111-ad86-52b1e84a54bd', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '7accb25f-cf15-4004-b140-b9808888a368', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'dfd2ce14-95b7-4e6a-ae53-beffea23d0fe', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'a4d2fd91-4f9d-49ba-a76c-fe14806696a9', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'd110f6b2-0b9f-46cc-82c0-deec5439751f', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'df668ba6-a202-43c0-a0fc-26f2cf8265c4', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '887c77e0-f74c-4ff6-a513-74179db1dd46', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '889a98a1-6e0c-46bd-b8f8-7df1d1521a1a', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '3d1f7378-2585-4d4f-b0ce-8cfaa6c7370a', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+-- El catálogo también publica sábanas de cajón, sin una medida específica.
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '715ecbfe-1090-44d3-a813-4efec2487f37', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Sábana de cajón'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '0266889c-f989-463d-bb94-50a49b934d08', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Sábana de cajón'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'e07c084e-e540-449a-ae3a-1c4caf2ff4f7', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Sábana de cajón'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'sabanas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c4ed25a2-99af-4b4a-b342-12a2aa4e4de0', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 80 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'fundas-y-protector-de-almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'b49c63c0-10f9-4d47-b5bb-74fbf9c0567d', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 80 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'fundas-y-protector-de-almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '855a6df9-0b9a-4f50-a961-2af3e3936ab1', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 80 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'fundas-y-protector-de-almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'fdb56a29-cec9-4612-a2f7-244e52d4c469', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 100 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'fundas-y-protector-de-almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '35320f26-1883-4ee3-9e89-7e2191b78ed0', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 100 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'fundas-y-protector-de-almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '121279d3-e28f-437c-b1e9-03e63bd51b2f', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 100 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'fundas-y-protector-de-almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'cdd80a7c-a7de-4306-ac3d-4000a8834df5', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 70 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos con relleno fibra 100% poliéster'
+WHERE p.slug = 'almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '82ac7537-7a5a-4dba-bedf-04d99dd4db0b', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 70 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos con relleno microgel'
+WHERE p.slug = 'almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '1b0858b6-9fad-4e0c-8f09-6559d56f257b', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 90 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos con relleno fibra 100% poliéster'
+WHERE p.slug = 'almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '1fe51ea2-87f8-479e-9cde-9841be95416a', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 90 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos con relleno microgel'
+WHERE p.slug = 'almohadas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '001af87a-2ae6-4854-9815-dd5024c9f11d', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '8cfe391b-c63b-4022-ba8e-880d19312ef0', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '3d292675-2d6d-44c8-aa78-542ecb8a5d7c', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '15f928fa-d570-4c97-ac37-b33fae996159', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Satin líneas 250 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'f6989a83-4f4e-4519-9585-1dc0443a816f', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '446d605d-731b-4af2-bb0b-b9287c5e0b92', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c56de99a-8afc-4ff0-bb9a-8c47cfe3669b', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '3acccb21-c05b-457c-9ca1-6edeb56bc2c8', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Satin líneas 250 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'd69b2a0a-3e02-4e48-a220-d9171aca95f3', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'e154d38b-f352-41b6-accc-18a7c71ba4cd', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'b5781efc-be82-477e-8bba-88bd631742af', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'f573869e-6119-4f5e-bd0c-6ba885c82679', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Satin líneas 250 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'd7b4e089-8fba-4718-be9a-0ed6520049b4', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 180 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'a6adea79-2856-4746-a484-fba3cb42fc39', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 200 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'f041bcc4-e55c-4cb3-96b3-f7944ead9435', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Percal 300 hilos 100% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c204110b-310e-46ac-abd9-03aaba601255', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Satin líneas 250 hilos 50% poliéster / 50% algodón'
+WHERE p.slug = 'duvet-e-insertos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '4a1260fc-3a2d-442a-b043-aaea052ccd64', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 280 cm'
+JOIN fabric_types f ON f.name = 'Tela waffle'
+WHERE p.slug = 'duvet-y-sobrecamas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'b3d80ce3-9ea8-474f-86bb-423f46a94b9a', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '220 x 280 cm'
+JOIN fabric_types f ON f.name = 'Tela waffle'
+WHERE p.slug = 'duvet-y-sobrecamas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '9e60765c-7d99-47b8-99b7-16ebda9ad9a7', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '240 x 280 cm'
+JOIN fabric_types f ON f.name = 'Tela waffle'
+WHERE p.slug = 'duvet-y-sobrecamas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '045441c9-d7cb-4208-87b7-508aacae1209', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '280 x 280 cm'
+JOIN fabric_types f ON f.name = 'Tela waffle'
+WHERE p.slug = 'duvet-y-sobrecamas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '35812842-db95-402b-b2b2-01b52c6ddf54', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'edredones'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'db5815ef-975e-455a-9f52-1af34846d7d0', p.id, NULL, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN fabric_types f ON f.name = 'Polar Flanel 100% poliéster'
+WHERE p.slug = 'cobertores'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c4126d07-cc87-459e-9788-7aed103ab820', p.id, NULL, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN fabric_types f ON f.name = 'Waffle 50% algodón / 50% poliéster'
+WHERE p.slug = 'batas-spa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'e1c8fb7c-c9db-4ab1-9e2d-8dc6db7931d6', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'cojin-cilindro-y-fundas-cilindros'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'bd611b5c-2000-47ae-9b83-c099ae108534', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'cojin-careta-y-funda-caretas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '564eeb95-d5be-4b6e-9de0-90d50671b09c', p.id, NULL, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN fabric_types f ON f.name = 'Bramante 50% algodón / 50% poliéster'
+WHERE p.slug = 'batas-paciente'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '7f9292d6-8318-4df4-b70b-9c6face51991', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'campos-medicos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '2d6b408b-33c8-411a-b525-84a0ceddb47c', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '140 x 210 cm'
+WHERE p.slug = 'cortinas-blackout'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '544d966f-8591-4d14-be00-f663bb17757f', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'A la medida'
+WHERE p.slug = 'cortinas-blackout'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'd78c49da-0fb0-4478-bdfd-d40807d95d40', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '300 x 210 cm'
+WHERE p.slug = 'cortinas-traslucidas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '5f9a7cb2-fc9b-4db5-b290-6020e72dfd7c', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'A la medida'
+WHERE p.slug = 'cortinas-traslucidas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '89f6338e-da9a-4b1a-9da7-c785e97d4031', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '140 x 210 cm'
+WHERE p.slug = 'cortinas-semi-traslucidas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '5dc18935-fa0a-4058-879d-4929c5c4c8cd', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'A la medida'
+WHERE p.slug = 'cortinas-semi-traslucidas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c9f5d5cb-eb49-464d-8901-872cd20026c8', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '180 x 180 cm'
+WHERE p.slug = 'cortinas-de-bano'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'f7a4ad0e-a4fe-46db-9fef-8544db70dd53', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Cortina'
+WHERE p.slug = 'balinesas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '96ce7e5e-2f11-47d3-bb19-05b912a09041', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = 'Forro de colchón'
+WHERE p.slug = 'balinesas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c2d8f03d-14f9-4de2-8355-cb1f9d08e015', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'rodapie'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'a159fd89-4596-4967-9bc3-95679fded0cf', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'pie-de-cama'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '2bcc0c7b-ec6b-41d0-a548-00c326a61a89', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '40 x 40 cm'
+WHERE p.slug = 'cojines'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'bd3470f1-da57-405f-bf6c-cf5e15d13a7c', p.id, m.id, NULL, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 50 cm'
+WHERE p.slug = 'cojines'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '4dbc3b50-dbe8-4b87-b6ed-fc9a1d8e6b7e', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'pabellon'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'c6f9d5a4-c735-4d19-b2ae-9ce578202272', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '40 x 70 cm / 200 g'
+JOIN fabric_types f ON f.name = 'Hilo Torzal 100% algodón'
+WHERE p.slug = 'toalla-de-manos'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '70331daa-b6fd-49a1-bbba-540b519200be', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '50 x 80 cm / 300 g'
+JOIN fabric_types f ON f.name = 'Hilo Torzal 100% algodón'
+WHERE p.slug = 'tapete-felpa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'b4cb7000-7c1f-4125-8bf8-87031383a0cb', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '30 x 30 cm / 50 g'
+JOIN fabric_types f ON f.name = 'Hilo Torzal 100% algodón'
+WHERE p.slug = 'faciales-felpa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'ca51dc8f-a367-44cf-a389-90be4a1c0ac4', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '90 x 150 cm / 770 g'
+JOIN fabric_types f ON f.name = 'Hilo Torzal 100% algodón'
+WHERE p.slug = 'toallas-de-bano'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'd990bd46-0be3-4923-91f0-bf27267e4f6a', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '90 x 190 cm / 1000 g'
+JOIN fabric_types f ON f.name = 'Hilo Torzal 100% algodón'
+WHERE p.slug = 'toallas-de-alberca-felpa'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '96304041-5bba-436e-a24c-eebac408e1a8', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'servilletas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '395cfc29-7950-47e3-8994-4993b685a0e3', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'manteles'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '000e320d-ffa4-48f2-b5f3-aaf1ed7d18f8', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'bambalinas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '20639009-e04f-48a2-8f1d-2cf4a1307192', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'cubresillas'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '34494352-bb23-446f-9645-792581ac9c40', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'tortilleros-porta-calientes'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '056593cb-260e-4552-aba4-1e981f263dad', p.id, NULL, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN fabric_types f ON f.name = 'Manta'
+WHERE p.slug = 'bolsas-amenities'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'a2ed63fd-277b-47f8-9a58-bbcd0e149353', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '20 x 22'
+JOIN fabric_types f ON f.name = 'Manta'
+WHERE p.slug = 'bolsas-de-manta'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '30116dfc-02ec-42c5-96ea-34091ff318d5', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '26 x 33'
+JOIN fabric_types f ON f.name = 'Manta'
+WHERE p.slug = 'bolsas-de-manta'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '72b0fea9-768f-48c5-a30c-7ecc1c485a86', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '31 x 36'
+JOIN fabric_types f ON f.name = 'Manta'
+WHERE p.slug = 'bolsas-de-manta'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '2c4ed575-77cc-4a53-8571-94dd43d54c9d', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '35 x 42'
+JOIN fabric_types f ON f.name = 'Manta'
+WHERE p.slug = 'bolsas-de-manta'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '65391881-1d50-4d62-92aa-a65c3b95bc04', p.id, m.id, f.id, NULL, NULL, 0, 1
+FROM products p
+JOIN measurements m ON m.label = '38 x 45'
+JOIN fabric_types f ON f.name = 'Manta'
+WHERE p.slug = 'bolsas-de-manta'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT '9f937bc9-ed14-436b-9e8b-fc95b78f96da', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'playeras-promocionales'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+INSERT INTO product_variants (id, product_id, measurement_id, fabric_type_id, price, sku, stock, is_active)
+SELECT 'dff3f725-8832-4f64-9197-3d75127e221b', p.id, NULL, NULL, NULL, NULL, 0, 1
+FROM products p
+WHERE p.slug = 'mandiles-promocionales'
+ON DUPLICATE KEY UPDATE
+  product_id = VALUES(product_id),
+  measurement_id = VALUES(measurement_id),
+  fabric_type_id = VALUES(fabric_type_id),
+  is_active = VALUES(is_active);
+
+COMMIT;
+
+-- Procedimiento consumido por src/features/products/data/mysqlProducts.ts
+DELIMITER $$
+
 CREATE PROCEDURE sp_search_products(IN search_term VARCHAR(255))
 BEGIN
-    IF search_term IS NULL OR TRIM(search_term) = '' THEN
-        SELECT p.*, 
-               (
-                   SELECT JSON_ARRAYAGG(
-                       JSON_OBJECT(
-                           'id', pv.id,
-                           'sku', pv.sku,
-                           'price', pv.price,
-                           'stock', pv.stock,
-                           'is_active', pv.is_active,
-                           'fabric_types', (SELECT JSON_OBJECT('id', ft.id, 'name', ft.name, 'description', ft.description) FROM fabric_types ft WHERE ft.id = pv.fabric_type_id),
-                           'measurements', (SELECT JSON_OBJECT('id', m.id, 'label', m.label, 'type', m.type) FROM measurements m WHERE m.id = pv.measurement_id)
-                       )
-                   )
-                   FROM product_variants pv
-                   WHERE pv.product_id = p.id AND pv.is_active = TRUE
-               ) AS product_variants
-        FROM products p
-        WHERE p.is_active = TRUE
-        ORDER BY p.created_at DESC;
-    ELSE
-        -- Perform Full-Text search or LIKE search depending on requirement.
-        -- We will use LIKE here as it is very reliable for short strings/partial matches,
-        -- but you can also use MATCH(p.title, p.description) AGAINST(search_term IN BOOLEAN MODE).
-        SELECT p.*, 
-               (
-                   SELECT JSON_ARRAYAGG(
-                       JSON_OBJECT(
-                           'id', pv.id,
-                           'sku', pv.sku,
-                           'price', pv.price,
-                           'stock', pv.stock,
-                           'is_active', pv.is_active,
-                           'fabric_types', (SELECT JSON_OBJECT('id', ft.id, 'name', ft.name, 'description', ft.description) FROM fabric_types ft WHERE ft.id = pv.fabric_type_id),
-                           'measurements', (SELECT JSON_OBJECT('id', m.id, 'label', m.label, 'type', m.type) FROM measurements m WHERE m.id = pv.measurement_id)
-                       )
-                   )
-                   FROM product_variants pv
-                   WHERE pv.product_id = p.id AND pv.is_active = TRUE
-               ) AS product_variants
-        FROM products p
-        WHERE p.is_active = TRUE 
-          AND (p.title LIKE CONCAT('%', search_term, '%') OR p.description LIKE CONCAT('%', search_term, '%'))
-        ORDER BY p.created_at DESC;
-    END IF;
-END //
+  IF search_term IS NULL OR TRIM(search_term) = '' THEN
+    SELECT
+      p.*,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'id', pv.id,
+            'sku', pv.sku,
+            'price', pv.price,
+            'stock', pv.stock,
+            'is_active', pv.is_active,
+            'fabric_types', (
+              SELECT JSON_OBJECT(
+                'id', ft.id,
+                'name', ft.name,
+                'description', ft.description
+              )
+              FROM fabric_types ft
+              WHERE ft.id = pv.fabric_type_id
+            ),
+            'measurements', (
+              SELECT JSON_OBJECT(
+                'id', m.id,
+                'label', m.label,
+                'type', m.type
+              )
+              FROM measurements m
+              WHERE m.id = pv.measurement_id
+            )
+          )
+        )
+        FROM product_variants pv
+        WHERE pv.product_id = p.id
+          AND pv.is_active = TRUE
+      ) AS product_variants
+    FROM products p
+    WHERE p.is_active = TRUE
+    ORDER BY p.created_at ASC;
+  ELSE
+    SELECT
+      p.*,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'id', pv.id,
+            'sku', pv.sku,
+            'price', pv.price,
+            'stock', pv.stock,
+            'is_active', pv.is_active,
+            'fabric_types', (
+              SELECT JSON_OBJECT(
+                'id', ft.id,
+                'name', ft.name,
+                'description', ft.description
+              )
+              FROM fabric_types ft
+              WHERE ft.id = pv.fabric_type_id
+            ),
+            'measurements', (
+              SELECT JSON_OBJECT(
+                'id', m.id,
+                'label', m.label,
+                'type', m.type
+              )
+              FROM measurements m
+              WHERE m.id = pv.measurement_id
+            )
+          )
+        )
+        FROM product_variants pv
+        WHERE pv.product_id = p.id
+          AND pv.is_active = TRUE
+      ) AS product_variants
+    FROM products p
+    WHERE p.is_active = TRUE
+      AND (
+        p.title LIKE CONCAT('%', TRIM(search_term), '%')
+        OR p.description LIKE CONCAT('%', TRIM(search_term), '%')
+        OR p.category LIKE CONCAT('%', TRIM(search_term), '%')
+      )
+    ORDER BY p.created_at ASC;
+  END IF;
+END$$
 
 DELIMITER ;
+
+-- Resumen esperado del seed: 38 productos, 14 tipos de tela, 32 medidas/formatos y 99 variantes.

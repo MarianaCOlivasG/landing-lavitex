@@ -10,7 +10,6 @@
     "export": "next export"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.104.1",
     "formik": "^2.4.9",
     "mysql2": "^3.22.4",
     "next": "16.2.4",

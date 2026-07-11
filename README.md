@@ -8,7 +8,7 @@ Lavitex is a modern web application designed for laundry services, featuring a s
 
 - **Framework:** [Next.js 15+](https://nextjs.org/) (App Router)
 - **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
-- **Backend/Auth:** [Supabase](https://supabase.com/)
+- **Database:** [MySQL](https://www.mysql.com/)
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
 - **Deployment:** [Docker](https://www.docker.com/)
 
@@ -34,7 +34,7 @@ Lavitex is a modern web application designed for laundry services, featuring a s
    ```
 
 3. **Set up environment variables:**
-   Copy the example file and fill in your Supabase credentials:
+   Copy the example file and fill in your MySQL credentials:
    ```bash
    cp .env.example .env.local
    ```
@@ -48,13 +48,16 @@ Open [http://localhost:3000](http://localhost:3000) to see the result.
 
 ## 🐳 Docker Deployment
 
-Debido a que Next.js necesita las variables `NEXT_PUBLIC_` durante la compilación para incluirlas en el bundle del cliente, debes pasarlas como argumentos de construcción:
+Pasa las credenciales de MySQL como argumentos de construcción para que estén disponibles en el servidor:
 
 1. **Build the image:**
    ```bash
    docker build \
-     --build-arg NEXT_PUBLIC_SUPABASE_URL="https://tu-proyecto.supabase.co" \
-     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="tu-anon-key-aqui" \
+     --build-arg DB_HOST="127.0.0.1" \
+     --build-arg DB_PORT="3306" \
+     --build-arg DB_USER="lavitex_user" \
+     --build-arg DB_PASSWORD="lavitex_password" \
+     --build-arg DB_NAME="lavitex_db" \
      -t lavitex-app .
    ```
 
@@ -67,7 +70,7 @@ Debido a que Next.js necesita las variables `NEXT_PUBLIC_` durante la compilaci�
 
 - `/app`: Next.js App Router (Páginas y layouts).
 - `/components`: Componentes UI reutilizables.
-- `/lib`: Funciones de utilidad y cliente de Supabase.
+- `/lib`: Funciones de utilidad y cliente de MySQL.
 - `/public`: Assets estáticos.
 
 ---
