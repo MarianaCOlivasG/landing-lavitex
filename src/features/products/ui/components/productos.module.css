@@ -244,6 +244,53 @@
   transition: transform 0.45s ease;
 }
 
+.cardImagePlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.48), transparent 52%),
+    #e9edf0;
+  color: #7b8790;
+}
+
+.cardImagePlaceholder::after {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border: 1px solid rgba(107, 123, 128, 0.12);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.placeholderIcon {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd3d8;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.placeholderIcon .material-symbols-outlined {
+  font-size: 23px;
+  color: #87939b;
+}
+
+.placeholderText {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #7b8790;
+}
+
 .card:hover .cardImage {
   transform: scale(1.06);
 }

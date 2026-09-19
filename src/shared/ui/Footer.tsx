@@ -19,10 +19,11 @@ export default function Footer() {
           <div className="flex flex-col space-y-6">
             <h4 className="font-headline-sm text-sm uppercase tracking-widest text-slate-900">Corporativo</h4>
             <nav className="flex flex-col space-y-4">
-              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Sustentabilidad</a>
-              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Aviso de Privacidad</a>
-              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Términos de Servicio</a>
-              <a className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="#">Políticas de Calidad</a>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/sustentabilidad">Sustentabilidad</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/aviso-de-privacidad">Aviso de Privacidad</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/terminos-de-servicio">Términos de Servicio</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/politicas-de-calidad">Políticas de Calidad</Link>
+              <Link className="text-slate-500 text-sm hover:text-[#10B2CC] transition-colors" href="/carta-garantia">Carta de Garantía</Link>
             </nav>
           </div>
 

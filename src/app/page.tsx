@@ -1,6 +1,7 @@
 import TopNavBar from '@/shared/ui/TopNavBar';
 import HeroSection from '@/shared/ui/HeroSection';
 import CertificationsSection from '@/shared/ui/CertificationsSection';
+import WarrantyTrustSection from '@/shared/ui/WarrantyTrustSection';
 import WhoWeAreSection from '@/shared/ui/WhoWeAreSection';
 import ProductsSection from '@/shared/ui/ProductsSection';
 import ContactSection from '@/shared/ui/ContactSection';
@@ -16,6 +17,7 @@ export default function Home() {
       <main className="flex-1 w-full">
         <HeroSection />
         <CertificationsSection />
+        <WarrantyTrustSection />
         <WhoWeAreSection />
         <ProductsSection />
         <ContactSection />

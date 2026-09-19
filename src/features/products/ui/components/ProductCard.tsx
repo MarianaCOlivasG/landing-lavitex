@@ -5,24 +5,42 @@ import { Product } from '@/features/products/domain/product';
 import styles from './productos.module.css';
 
 interface ProductCardProps {
-  product: any; // Using any for now to avoid complex mapping logic, but typed to Product in intent
+  product: Product;
 }
 
-export default function ProductCard({ product }: { product: any }) {
+export default function ProductCard({ product }: ProductCardProps) {
   // Get unique fabric types and measurements from variants
-  const fabricTypes = Array.from(new Set(product.product_variants?.map((v: any) => v.fabric_types?.name).filter(Boolean)));
-  const measurements = Array.from(new Set(product.product_variants?.map((v: any) => v.measurements?.label).filter(Boolean)));
+  const fabricTypes = Array.from(new Set(
+    (product.product_variants ?? []).flatMap((variant) =>
+      variant.fabric_types?.name ? [variant.fabric_types.name] : []
+    )
+  ));
+  const measurements = Array.from(new Set(
+    (product.product_variants ?? []).flatMap((variant) =>
+      variant.measurements?.label ? [variant.measurements.label] : []
+    )
+  ));
+  const hasImage = typeof product.main_image === 'string' && product.main_image.trim().length > 0;
 
   return (
     <div className={`${styles.card} premium-card`}>
       <div className={styles.cardImageWrap}>
-        <Image 
-          src={product.main_image} 
-          alt={product.title} 
-          fill 
-          className={styles.cardImage}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+        {hasImage ? (
+          <Image
+            src={product.main_image}
+            alt={product.title}
+            fill
+            className={styles.cardImage}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        ) : (
+          <div className={styles.cardImagePlaceholder} aria-label={`${product.title}, imagen no disponible`}>
+            <span className={styles.placeholderIcon} aria-hidden="true">
+              <span className="material-symbols-outlined">image</span>
+            </span>
+            <span className={styles.placeholderText}>Imagen no disponible</span>
+          </div>
+        )}
         {product.category && (
           <span className={styles.categoryBadge}>{product.category}</span>
         )}
@@ -36,7 +54,7 @@ export default function ProductCard({ product }: { product: any }) {
           {fabricTypes.length > 0 && (
             <div className={styles.tagRow}>
               <span className={styles.tagLabel}>Telas:</span>
-              {fabricTypes.map((type: any, idx: number) => (
+              {fabricTypes.map((type, idx) => (
                 <span key={idx} className={styles.tag}>{type}</span>
               ))}
             </div>
@@ -45,7 +63,7 @@ export default function ProductCard({ product }: { product: any }) {
           {measurements.length > 0 && (
             <div className={styles.tagRow}>
               <span className={styles.tagLabel}>Medidas:</span>
-              {measurements.map((size: any, idx: number) => (
+              {measurements.map((size, idx) => (
                 <span key={idx} className={`${styles.tag} ${styles.tagSize}`}>{size}</span>
               ))}
             </div>
