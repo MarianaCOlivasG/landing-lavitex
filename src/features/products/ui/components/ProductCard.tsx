@@ -20,14 +20,16 @@ export default function ProductCard({ product }: ProductCardProps) {
       variant.measurements?.label ? [variant.measurements.label] : []
     )
   ));
-  const hasImage = typeof product.main_image === 'string' && product.main_image.trim().length > 0;
+  const imagePath = typeof product.main_image === 'string' ? product.main_image.trim() : '';
+  const isTemporaryLogo = /(^|\/)logo\.png(?:[?#].*)?$/i.test(imagePath);
+  const hasImage = imagePath.length > 0 && !isTemporaryLogo;
 
   return (
     <div className={`${styles.card} premium-card`}>
       <div className={styles.cardImageWrap}>
         {hasImage ? (
           <Image
-            src={product.main_image}
+            src={imagePath}
             alt={product.title}
             fill
             className={styles.cardImage}
