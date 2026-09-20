@@ -3,11 +3,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import TopNavBar from '@/shared/ui/TopNavBar';
 import Footer from '@/shared/ui/Footer';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Carta de Garantía | Lavitex del Caribe',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Carta de Garantía',
   description: 'Consulta la cobertura, exclusiones y proceso de reposición de la garantía de productos Lavitex del Caribe.',
-};
+  path: '/carta-garantia',
+});
 
 const exclusions = [
   'Mal almacenamiento de las piezas.',

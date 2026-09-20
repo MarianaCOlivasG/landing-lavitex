@@ -1,6 +1,10 @@
 services:
   lavitex:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://lavitexdelcaribe.com}
+        GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
     # image: marianaolivas/lavitex-web:latest
     container_name: lavitex-we
     restart: always
@@ -16,6 +20,8 @@ services:
       DB_USER: lavitex_user
       DB_PASSWORD: lavitex_password
       DB_NAME: lavitex_db
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://lavitexdelcaribe.com}
+      GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
 
 #   mysql:
 #     image: mysql:8.0

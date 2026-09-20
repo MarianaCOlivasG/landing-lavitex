@@ -1,4 +1,6 @@
 import React from 'react';
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getProductBySlugUseCase, listProductSlugsUseCase } from '@/features/products/usecases/productUseCases';
 import TopNavBar from '@/shared/ui/TopNavBar';
@@ -6,8 +8,11 @@ import Footer from '@/shared/ui/Footer';
 import ProductGallery from '@/features/products/ui/components/ProductGallery';
 import ProductInfo from '@/features/products/ui/components/ProductInfo';
 import Link from 'next/link';
+import { absoluteUrl, createPageMetadata, DEFAULT_SOCIAL_IMAGE, serializeJsonLd, SITE_URL } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+
+const getProduct = cache(getProductBySlugUseCase);
 
 // Generate static params for all product slugs during export
 export async function generateStaticParams() {
@@ -21,18 +26,99 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProduct(slug);
+
+  if (!product) {
+    return createPageMetadata({
+      title: 'Producto no encontrado',
+      description: 'El producto solicitado no se encuentra disponible en el catálogo de Lavitex del Caribe.',
+      path: `/producto/${slug}`,
+      noIndex: true,
+    });
+  }
+
+  const productImage = product.main_image?.trim();
+  const hasRealImage = productImage && !/(^|\/)logo\.png(?:[?#].*)?$/i.test(productImage);
+
+  return createPageMetadata({
+    title: product.title,
+    description: product.description || `Conoce ${product.title}, una solución textil de Lavitex del Caribe para el sector hotelero y comercial.`,
+    path: `/producto/${product.slug}`,
+    image: hasRealImage ? productImage : DEFAULT_SOCIAL_IMAGE,
+  });
+}
+
 
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductBySlugUseCase(slug);
+  const product = await getProduct(slug);
 
   if (!product) {
     notFound();
     return null;
   }
 
+  const realImages = [product.main_image, ...(product.gallery ?? [])]
+    .map((image) => image?.trim())
+    .filter((image): image is string => Boolean(image) && !/(^|\/)logo\.png(?:[?#].*)?$/i.test(image));
+
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    '@id': `${SITE_URL.origin}/producto/${product.slug}#product`,
+    name: product.title,
+    description: product.description,
+    url: absoluteUrl(`/producto/${product.slug}`),
+    ...(realImages.length > 0
+      ? { image: realImages.map((image) => absoluteUrl(image)) }
+      : {}),
+    category: product.category,
+    brand: {
+      '@type': 'Brand',
+      name: 'Lavitex del Caribe',
+    },
+    manufacturer: {
+      '@id': `${SITE_URL.origin}/#organization`,
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Inicio',
+        item: SITE_URL.origin,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Productos',
+        item: absoluteUrl('/productos'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.title,
+        item: absoluteUrl(`/producto/${product.slug}`),
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
       <TopNavBar />
       
       <main className="min-h-screen pt-24 pb-20 bg-white">

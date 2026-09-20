@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import CorporatePage, { type CorporateSection } from '@/shared/ui/CorporatePage';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Aviso de Privacidad | Lavitex del Caribe',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Aviso de Privacidad',
   description: 'Aviso de privacidad integral de Lavitex del Caribe para visitantes, prospectos, clientes y personas usuarias de sus canales de contacto.',
-};
+  path: '/aviso-de-privacidad',
+});
 
 const sections: CorporateSection[] = [
   {

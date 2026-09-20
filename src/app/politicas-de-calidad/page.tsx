@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import CorporatePage, { type CorporateSection } from '@/shared/ui/CorporatePage';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Política de Calidad | Lavitex del Caribe',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Política de Calidad',
   description: 'Conoce los principios de calidad de Lavitex del Caribe para la fabricación, recuperación y entrega de soluciones textiles.',
-};
+  path: '/politicas-de-calidad',
+});
 
 const sections: CorporateSection[] = [
   {

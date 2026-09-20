@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import CorporatePage, { type CorporateSection } from '@/shared/ui/CorporatePage';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Sustentabilidad | Lavitex del Caribe',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Sustentabilidad',
   description: 'Conoce el enfoque de Lavitex del Caribe para extender la vida útil de los textiles, optimizar materiales y fortalecer la producción local.',
-};
+  path: '/sustentabilidad',
+});
 
 const sections: CorporateSection[] = [
   {

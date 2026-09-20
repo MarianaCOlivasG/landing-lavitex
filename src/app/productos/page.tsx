@@ -4,12 +4,13 @@ import Footer from '@/shared/ui/Footer';
 import SearchBar from '@/features/products/ui/components/SearchBar';
 import ProductGrid from '@/features/products/ui/components/ProductGrid';
 import styles from '@/features/products/ui/components/productos.module.css';
+import { createPageMetadata } from '@/lib/seo';
 
-// Page metadata (must be exported from a server component)
-export const metadata = {
-  title: 'Productos – Lavitex del Caribe',
-  description: 'Catálogo completo de lencería hotelera premium: sábanas, toallas, cobertores, manteles y más.',
-};
+export const metadata = createPageMetadata({
+  title: 'Catálogo de productos textiles',
+  description: 'Consulta blancos institucionales, sábanas, protectores, toallas, cortinas, mantelería y textiles a la medida para hotelería, spa, hospital y eventos.',
+  path: '/productos',
+});
 
 
 export default function ProductosPage() {

@@ -1,13 +1,17 @@
 import React from 'react';
+import Image from 'next/image';
 
 export default function HeroSection() {
   return (
     <header id="home" className="relative w-full h-[870px] flex items-center justify-center overflow-hidden bg-slate-50">
       <div className="absolute inset-0 z-0">
-        <img
-          alt="Bright and clean white hotel linens"
-          className="w-full h-full object-cover"
+        <Image
+          alt="Blancos hoteleros fabricados por Lavitex del Caribe"
           src="/images/hero-bg.png"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-white/40"></div>
       </div>

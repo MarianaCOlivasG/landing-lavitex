@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import CorporatePage, { type CorporateSection } from '@/shared/ui/CorporatePage';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Términos de Servicio | Lavitex del Caribe',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Términos de Servicio',
   description: 'Condiciones de uso del sitio web, catálogo y canales digitales de Lavitex del Caribe.',
-};
+  path: '/terminos-de-servicio',
+});
 
 const sections: CorporateSection[] = [
   {
